@@ -1,0 +1,42 @@
+# ---- 密钥与登录态：绝对不能上传 ----
+.env.local
+**/.env.local
+工具/douyinLive-v2.3.2/
+工具/画面浏览器/
+tts-mac/panel/token
+
+# ---- 直播日志与节目记忆（含观众数据） ----
+原型/logs/
+原型/runtime/
+原型/backups/
+
+# ---- 自己的素材、字体和大文件 ----
+素材/*
+!素材/tools/
+!素材/素材清单.md
+**/assets/fonts/
+*.mp4
+*.mov
+*.wav
+*.webm
+
+# ---- Mac 版 TTS：模型、安装包、编译产物、输出 ----
+tts-mac/models/
+tts-mac/runtime/
+tts-mac/build/
+tts-mac/logs/
+tts-mac/outputs/
+tts-mac/voices/
+tts-mac/voice-references/
+tts-mac/installers/*.tar.gz
+tts-mac/source/Breeze-TTS-2.cpp/
+
+# ---- 临时与本机文件 ----
+node_modules/
+__pycache__/
+*.pyc
+tmp/
+output/
+.claude/
+*.log
+.DS_Store

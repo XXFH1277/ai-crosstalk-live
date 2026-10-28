@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>鲸月咖啡厅 · 控制台</title>
+<style>
+  :root { --bg: #f5f6fa; --card: #fff; --ink: #1d2233; --muted: #6b7290; --line: #e3e6f0; --blue: #3d8bff; --violet: #8b6cff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Microsoft YaHei UI", "PingFang SC", sans-serif; background: var(--bg); color: var(--ink); }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  h1 { grid-column: 1 / -1; margin: 0; font-size: 22px; }
+  h1 small { font-size: 14px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  h2 { margin: 0 0 12px; font-size: 16px; }
+  .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+  input.user { flex: 0 0 140px; }
+  button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font: inherit; cursor: pointer; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+  button.on { background: #e8fff0; border-color: #48c27a; color: #1d7a45; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; font-size: 14px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; }
+  ol { margin: 0; padding-left: 20px; font-size: 14px; }
+  pre { margin: 0; font-size: 12px; line-height: 1.5; max-height: 360px; overflow: auto; white-space: pre-wrap; background: #f8f9fc; padding: 10px; border-radius: 8px; }
+  .wide { grid-column: 1 / -1; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td { padding: 5px 6px; border-top: 1px solid var(--line); vertical-align: top; }
+  td.reason { color: #b4372f; white-space: nowrap; }
+  td.time { color: var(--muted); white-space: nowrap; }
+  button.small { padding: 2px 8px; font-size: 12px; }
+  .hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>鲸月咖啡厅 · 控制台 <small>模拟观众和查看导演状态；直播画面在 <a href="/" target="_blank">/</a></small></h1>
+
+  <section>
+    <h2>发弹幕</h2>
+    <div class="row">
+      <input id="user" class="user" value="测试观众">
+      <input id="text" placeholder="弹幕内容；“点歌 歌名”会让月月接单">
+      <button class="primary" id="send">发送</button>
+    </div>
+    <div class="row">
+      <button data-say="主播是真ai吗">主播是真ai吗</button>
+      <button data-say="深深今天又打碎杯子了吗">打碎杯子了吗</button>
+      <button data-say="点歌 晴天">点歌 晴天</button>
+    </div>
+    <h2 style="margin-top:14px">送礼物</h2>
+    <div class="row">
+      <button data-gift="小心心" data-coins="1">小心心 (1)</button>
+      <button data-gift="玫瑰" data-coins="1">玫瑰 (1)</button>
+      <button data-gift="墨镜" data-coins="99">墨镜 (99)</button>
+      <button data-gift="嘉年华" data-coins="3000">嘉年华 (3000)</button>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button id="mock">自动模拟观众：关</button>
+    </div>
+    <p class="hint">弹幕通过安全筛选后，大约每 2 句正文挑一条回应；问“是不是 AI”的会优先考虑。先回应评论本身，不必每次念全名或立刻转回段子。普通招呼等待约 20 秒后也会获得挑选机会，不保证每条必回。没有待回评论、最近 30 秒无新评论，并且距离上次观众互动至少 75 秒、已说过 8 句正文时，才围绕当前话题主动问一个简单问题。</p>
+    <p class="hint">每个礼物仍立即上屏并进入感谢榜。到期的评论回复先于谢礼物和点歌安排，已经安排的评论回复不会因大礼物被取消。99 钻及以上可安排两人道谢（20 秒冷却）；10~98 钻顺口感谢；小礼物约每 40 秒合并感谢。两句之间留 0.5 秒自然停顿；等待配音超过 1.6 秒才考虑垫话。</p>
+  </section>
+
+  <section>
+    <h2>状态</h2>
+    <dl id="status"></dl>
+    <h2 style="margin-top:14px">已备好待播</h2>
+    <ol id="prepared"></ol>
+  </section>
+
+  <section class="wide">
+    <h2>场景</h2>
+    <div class="row" id="scenes"></div>
+    <p class="hint">切换后直播画面立刻换背景、标题和服装（鲸云社穿大褂），之后写的台词和段子也会按新场景来。已经排好的一两句会照常说完。</p>
+  </section>
+
+  <section class="wide">
+    <h2>抖音数据源</h2>
+    <div class="row">
+      <input id="room" placeholder="你的直播间房间号，即 live.douyin.com/ 后面那串数字">
+      <button class="primary" id="room-save">保存</button>
+      <button id="room-clear">停止接收</button>
+    </div>
+    <dl id="sources"></dl>
+    <p class="hint">两路同时接收：douyinLive 服务（工具/douyinLive）和 Chrome 插件（在浏览器里打开这个房间的直播页）。同一条弹幕或礼物两路都收到时只算一次。</p>
+  </section>
+
+  <section class="wide">
+    <h2>弹幕防护</h2>
+    <div class="row">
+      <button id="replies">AI 回应弹幕：开</button>
+      <button id="reload">重新加载违禁词</button>
+      <span class="hint" id="guard-info"></span>
+    </div>
+    <p class="hint">被拦下的弹幕不会上屏，也不会交给角色。“屏蔽用户”后这个人的弹幕一律不处理（重启服务后清空）。</p>
+    <table id="blocked"></table>
+    <div class="row" id="blocked-users" style="margin-top:8px"></div>
+  </section>
+
+  <section class="wide">
+    <h2>导演日志</h2>
+    <pre id="logs"></pre>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const post = (path, body) => fetch(path, { method: 'POST', body: JSON.stringify(body) });
+const sendDanmaku = text => text && post('/api/event', { type: 'danmaku', user: $('user').value, text });
+
+$('send').onclick = () => { sendDanmaku($('text').value.trim()); $('text').value = ''; };
+$('text').onkeydown = e => { if (e.key === 'Enter') $('send').click(); };
+document.querySelectorAll('[data-say]').forEach(b => b.onclick = () => sendDanmaku(b.dataset.say));
+document.querySelectorAll('[data-gift]').forEach(b => b.onclick = () =>
+  post('/api/event', { type: 'gift', user: $('user').value, gift: b.dataset.gift, coins: +b.dataset.coins, count: 1 }));
+
+let mock = false;
+$('mock').onclick = async () => { mock = (await (await post('/api/mock', { on: !mock })).json()).mock; render(); };
+
+function row(k, v) { return `<dt>${k}</dt><dd>${v}</dd>`; }
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+let state = null;
+function render() {
+  $('mock').textContent = `自动模拟观众：${mock ? '开' : '关'}`;
+  $('mock').classList.toggle('on', mock);
+  if (!state) return;
+  const s = state;
+  $('status').innerHTML = [
+    row('画面', s.overlayReady ? '已开始演出' : '未开始（打开直播画面并点击开始）'),
+    row('画面声音输出', esc(s.overlayAudio)),
+    row('段子', s.segment ? `《${esc(s.segment.title)}》 ${s.segment.pos}/${s.segment.total}（${s.segment.source === 'llm' ? 'AI 编排' : '段子库'}）` : '—'),
+    row('正在说', s.playing ? `${s.playing.who}：${esc(s.playing.text)}` : '—'),
+    row('深深用', s.roles.深深), row('月月用', s.roles.月月),
+    ...Object.entries(s.providers).map(([k, v]) => row(`API ${k}`, esc(v))),
+    row('待回弹幕', s.pendingDanmaku),
+    row('待谢礼物', `大 ${s.pendingGifts.big}　中 ${s.pendingGifts.medium}　小 ${s.pendingGifts.small}`),
+  ].join('');
+  $('prepared').innerHTML = s.prepared.map(l => `<li>[${l.kind}·${l.status}${l.waitSeconds ? ` ${l.waitSeconds}秒` : ''}] ${l.who}：${esc(l.text)}</li>`).join('') || '<li>（空）</li>';
+  $('logs').textContent = s.logs.join('\n');
+  renderSources(s.douyin);
+  $('scenes').innerHTML = (s.scenes || []).map(n => `<button data-scene="${esc(n)}" class="${n === s.scene ? 'on' : ''}">${esc(n)}</button>`).join('');
+  $('replies').textContent = `AI 回应弹幕：${s.replyDanmaku ? '开' : '关'}`;
+  $('replies').classList.toggle('on', s.replyDanmaku);
+  $('guard-info').textContent = `违禁词 ${s.bannedWords} 个`;
+  $('blocked').innerHTML = s.blocked.map(b => `<tr>
+      <td class="time">${new Date(b.at).toLocaleTimeString('zh-CN', { hour12: false })}</td>
+      <td class="reason">${esc(b.reason)}</td>
+      <td>${esc(b.user)}：${esc(b.text)}</td>
+      <td><button class="small" data-block="${esc(b.user)}">屏蔽用户</button></td></tr>`).join('')
+    || '<tr><td class="hint">还没有拦截记录</td></tr>';
+  $('blocked-users').innerHTML = s.blockedUsers.length
+    ? '已屏蔽：' + s.blockedUsers.map(u => `<button class="small" data-unblock="${esc(u)}">${esc(u)} ✕</button>`).join(' ')
+    : '';
+}
+function renderSources(d) {
+  if (document.activeElement !== $('room') && !$('room').dataset.dirty) $('room').value = d.roomId;
+  const ago = t => (t ? `${Math.round((Date.now() - t) / 1000)} 秒前` : '从未');
+  const src = name => {
+    const s = d.sources[name];
+    return s ? `收到 ${s.received} 条，其中重复 ${s.duplicates} 条，最近一次 ${ago(s.lastAt)}` : '还没收到';
+  };
+  $('sources').innerHTML = [
+    row('房间号', d.roomId || '未设置（不接收真实弹幕）'),
+    row('douyinLive', esc(d.douyinLive)),
+    row('　└ 数据', src('douyinLive')),
+    row('Chrome 插件', src('extension')),
+    row('礼物价格', `已知 ${d.prices} 种`),
+  ].join('');
+}
+$('room').oninput = () => { $('room').dataset.dirty = '1'; };
+$('room-save').onclick = async () => {
+  const r = await (await post('/api/douyin', { roomId: $('room').value.trim() })).json();
+  if (r.error) alert(r.error);
+  delete $('room').dataset.dirty;
+};
+$('room-clear').onclick = () => { $('room').value = ''; delete $('room').dataset.dirty; post('/api/douyin', { roomId: '' }); };
+$('replies').onclick =() => post('/api/guard', { action: 'replies', on: !state?.replyDanmaku });
+$('reload').onclick = () => post('/api/guard', { action: 'reload' });
+document.addEventListener('click', e => {
+  const b = e.target.dataset;
+  if (b.scene) post('/api/scene', { scene: b.scene });
+  if (b.block) post('/api/guard', { action: 'block', user: b.block });
+  if (b.unblock) post('/api/guard', { action: 'unblock', user: b.unblock });
+});
+async function poll() {
+  try { state = await (await fetch('/api/state')).json(); mock = state.mock; render(); } catch {}
+  setTimeout(poll, 1000);
+}
+poll();
+</script>
+</body>
+</html>

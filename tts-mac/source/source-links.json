@@ -1,0 +1,27 @@
+[
+  {
+    "path": "source/Breeze-TTS-2.cpp/third_party/ggml/.pi/SYSTEM.md",
+    "target": "gg/SYSTEM.md",
+    "type": "symlink"
+  },
+  {
+    "path": "source/Breeze-TTS-2.cpp/third_party/shine/js/test/browser/encode.wav",
+    "target": "../lib/encode.wav",
+    "type": "symlink"
+  },
+  {
+    "path": "source/Breeze-TTS-2.cpp/third_party/shine/js/test/browser/libshine_node.js",
+    "target": "../../dist/libshine_node.js",
+    "type": "symlink"
+  },
+  {
+    "path": "source/Breeze-TTS-2.cpp/third_party/shine/js/test/browser/rounds.js",
+    "target": "../lib/rounds.js",
+    "type": "symlink"
+  },
+  {
+    "path": "source/Breeze-TTS-2.cpp/third_party/shine/js/test/nextjs/public/encode.wav",
+    "target": "../lib/encode.wav",
+    "type": "symlink"
+  }
+]

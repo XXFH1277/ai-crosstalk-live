@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Breeze TTS 控制台</title>
+<style>
+  :root {
+    --bg: #eef3f6;
+    --bg-glow-1: #cfe8ef;
+    --bg-glow-2: #e3ddf5;
+    --card: rgba(255, 255, 255, 0.78);
+    --card-border: rgba(20, 40, 60, 0.08);
+    --text: #14212b;
+    --muted: #5c6b77;
+    --subtle: #8a98a3;
+    --line: rgba(20, 40, 60, 0.09);
+    --accent: #0f8b8d;
+    --accent-strong: #0a6f71;
+    --accent-soft: rgba(15, 139, 141, 0.12);
+    --ok: #16a34a;
+    --ok-soft: rgba(22, 163, 74, 0.13);
+    --warn: #d97706;
+    --warn-soft: rgba(217, 119, 6, 0.14);
+    --danger: #dc2626;
+    --danger-soft: rgba(220, 38, 38, 0.11);
+    --idle: #94a3b8;
+    --idle-soft: rgba(148, 163, 184, 0.18);
+    --seg-bg: rgba(20, 40, 60, 0.06);
+    --seg-active: #ffffff;
+    --console-bg: #0f1a22;
+    --console-text: #c9d6df;
+    --shadow: 0 1px 2px rgba(16, 32, 48, 0.04), 0 12px 40px rgba(16, 32, 48, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b1217;
+      --bg-glow-1: #0e3036;
+      --bg-glow-2: #221d3a;
+      --card: rgba(22, 32, 40, 0.78);
+      --card-border: rgba(255, 255, 255, 0.07);
+      --text: #e7eef3;
+      --muted: #9aabb7;
+      --subtle: #6e808c;
+      --line: rgba(255, 255, 255, 0.08);
+      --accent: #2cc0c2;
+      --accent-strong: #5ad6d7;
+      --accent-soft: rgba(44, 192, 194, 0.14);
+      --ok: #34d399;
+      --ok-soft: rgba(52, 211, 153, 0.14);
+      --warn: #fbbf24;
+      --warn-soft: rgba(251, 191, 36, 0.14);
+      --danger: #f87171;
+      --danger-soft: rgba(248, 113, 113, 0.13);
+      --idle: #64748b;
+      --idle-soft: rgba(100, 116, 139, 0.22);
+      --seg-bg: rgba(255, 255, 255, 0.06);
+      --seg-active: rgba(255, 255, 255, 0.12);
+      --console-bg: #071016;
+      --console-text: #b9c8d2;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 48px rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b1217; --bg-glow-1: #0e3036; --bg-glow-2: #221d3a;
+    --card: rgba(22, 32, 40, 0.78); --card-border: rgba(255, 255, 255, 0.07);
+    --text: #e7eef3; --muted: #9aabb7; --subtle: #6e808c; --line: rgba(255, 255, 255, 0.08);
+    --accent: #2cc0c2; --accent-strong: #5ad6d7; --accent-soft: rgba(44, 192, 194, 0.14);
+    --ok: #34d399; --ok-soft: rgba(52, 211, 153, 0.14); --warn: #fbbf24; --warn-soft: rgba(251, 191, 36, 0.14);
+    --danger: #f87171; --danger-soft: rgba(248, 113, 113, 0.13); --idle: #64748b; --idle-soft: rgba(100, 116, 139, 0.22);
+    --seg-bg: rgba(255, 255, 255, 0.06); --seg-active: rgba(255, 255, 255, 0.12);
+    --console-bg: #071016; --console-text: #b9c8d2;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 48px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(900px 600px at 12% -10%, var(--bg-glow-1), transparent 60%),
+      radial-gradient(800px 600px at 110% 10%, var(--bg-glow-2), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 48px 16px 64px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+  .logo {
+    width: 44px; height: 44px; border-radius: 12px; flex: none;
+    background: linear-gradient(135deg, #14b8a6, #0ea5e9 55%, #8b5cf6);
+    display: grid; place-items: center; box-shadow: 0 6px 18px rgba(14, 165, 233, 0.3);
+  }
+  .logo svg { width: 24px; height: 24px; }
+  h1 { font-size: 22px; line-height: 1.2; margin: 0; letter-spacing: -0.01em; font-weight: 650; }
+  .tagline { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .theme-btn {
+    margin-left: auto; border: 1px solid var(--card-border); background: var(--card); color: var(--muted);
+    width: 36px; height: 36px; border-radius: 10px; cursor: pointer; display: grid; place-items: center;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+  .theme-btn:hover { color: var(--text); }
+  .theme-btn svg { width: 18px; height: 18px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 20px;
+    box-shadow: var(--shadow); backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  }
+
+  .hero { padding: 28px; }
+  .status-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .orb {
+    width: 56px; height: 56px; border-radius: 50%; flex: none; position: relative;
+    background: var(--idle-soft); display: grid; place-items: center; transition: background .3s;
+  }
+  .orb::before {
+    content: ""; width: 18px; height: 18px; border-radius: 50%; background: var(--idle); transition: background .3s;
+  }
+  .orb::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid transparent;
+  }
+  [data-state="running"] .orb { background: var(--ok-soft); }
+  [data-state="running"] .orb::before { background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: pulse 2.4s infinite; }
+  [data-state="starting"] .orb, [data-state="stopping"] .orb { background: var(--warn-soft); }
+  [data-state="starting"] .orb::before, [data-state="stopping"] .orb::before { background: var(--warn); }
+  [data-state="starting"] .orb::after, [data-state="stopping"] .orb::after {
+    border-color: var(--warn) transparent transparent transparent; animation: spin 1s linear infinite;
+  }
+  [data-state="error"] .orb, [data-state="offline"] .orb { background: var(--danger-soft); }
+  [data-state="error"] .orb::before, [data-state="offline"] .orb::before { background: var(--danger); }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent); }
+    70% { box-shadow: 0 0 0 14px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status-text { flex: 1; min-width: 200px; }
+  .status-title { font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
+  .status-sub { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+
+  .main-btn {
+    border: 0; border-radius: 14px; padding: 13px 26px; font: inherit; font-weight: 600; font-size: 15px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-width: 132px; justify-content: center;
+    transition: transform .08s, background .2s, opacity .2s, box-shadow .2s;
+    background: var(--accent); color: #fff; box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .main-btn:hover { background: var(--accent-strong); }
+  .main-btn:active { transform: scale(0.98); }
+  .main-btn.stop { background: var(--danger-soft); color: var(--danger); box-shadow: none; }
+  .main-btn.stop:hover { background: color-mix(in srgb, var(--danger) 20%, transparent); }
+  .main-btn:disabled { opacity: .55; cursor: default; transform: none; }
+  .main-btn svg { width: 16px; height: 16px; }
+
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
+  .opt-label { font-size: 12px; font-weight: 600; color: var(--subtle); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .seg { display: flex; background: var(--seg-bg); padding: 4px; border-radius: 12px; gap: 4px; }
+  .seg button {
+    flex: 1; border: 0; background: transparent; color: var(--muted); font: inherit; padding: 8px 10px;
+    border-radius: 9px; cursor: pointer; text-align: left; line-height: 1.3; transition: background .15s, color .15s;
+  }
+  .seg button b { display: block; font-size: 14px; font-weight: 600; color: inherit; }
+  .seg button span { font-size: 12px; color: var(--subtle); }
+  .seg button[aria-pressed="true"] { background: var(--seg-active); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .seg button:disabled { cursor: default; opacity: .5; }
+  .hint { font-size: 12.5px; color: var(--warn); margin-top: 12px; min-height: 0; }
+  .hint:empty { display: none; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 26px; border-top: 1px solid var(--line); padding-top: 20px; gap: 12px; }
+  .stat .k { font-size: 12px; color: var(--subtle); }
+  .stat .v { font-size: 17px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+  .action {
+    padding: 16px; border-radius: 16px; cursor: pointer; text-align: left; font: inherit; color: var(--text);
+    display: flex; flex-direction: column; gap: 10px; transition: transform .12s, border-color .2s;
+  }
+  .action:hover:not(:disabled) { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  .action:disabled { opacity: .45; cursor: default; }
+  .action .ic { width: 34px; height: 34px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+  .action .ic svg { width: 18px; height: 18px; }
+  .action .t { font-weight: 600; font-size: 14px; }
+  .action .d { font-size: 12px; color: var(--muted); margin-top: -6px; }
+  .action.primary .ic { background: var(--accent); color: #fff; }
+
+  .console-card { margin-top: 16px; overflow: hidden; }
+  .console-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; cursor: pointer; user-select: none; }
+  .console-head .t { font-weight: 600; font-size: 14px; }
+  .console-head .chev { color: var(--subtle); transition: transform .2s; }
+  .console-card.open .chev { transform: rotate(180deg); }
+  .console {
+    display: none; margin: 0; background: var(--console-bg); color: var(--console-text);
+    font: 12px/1.6 "SF Mono", ui-monospace, Menlo, monospace; padding: 16px 20px; max-height: 260px; overflow: auto;
+    white-space: pre-wrap; word-break: break-all;
+  }
+  .console-card.open .console { display: block; }
+
+  .offline {
+    display: none; margin-top: 16px; padding: 18px 20px; border-radius: 16px;
+    background: var(--danger-soft); color: var(--text); font-size: 13.5px;
+  }
+  .offline code { font: 12px "SF Mono", ui-monospace, Menlo, monospace; background: rgba(0,0,0,.06); padding: 2px 6px; border-radius: 6px; }
+  [data-state="offline"] .offline { display: block; }
+
+  footer { text-align: center; color: var(--subtle); font-size: 12px; margin-top: 28px; }
+  footer a { color: inherit; }
+
+  @media (max-width: 640px) {
+    body { padding-top: 28px; }
+    .hero { padding: 20px; }
+    .options { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .actions { grid-template-columns: repeat(2, 1fr); }
+    .main-btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="app" data-state="loading">
+  <header>
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>
+    </div>
+    <div>
+      <h1>Breeze TTS 2</h1>
+      <div class="tagline">本机中文语音合成 · Apple Silicon</div>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="切换深浅色" aria-label="切换深浅色">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </header>
+
+  <section class="card hero">
+    <div class="status-row">
+      <div class="orb" aria-hidden="true"></div>
+      <div class="status-text">
+        <div class="status-title" id="statusTitle">正在连接…</div>
+        <div class="status-sub" id="statusSub">读取服务状态</div>
+      </div>
+      <button class="main-btn" id="mainBtn" disabled>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <span>启动</span>
+      </button>
+    </div>
+
+    <div class="options">
+      <div>
+        <div class="opt-label">模型</div>
+        <div class="seg" id="modelSeg">
+          <button data-v="Q8"><b>Q8_0</b><span>3.6 GB · 更快</span></button>
+          <button data-v="F16"><b>F16</b><span>6.3 GB · 原始精度</span></button>
+        </div>
+      </div>
+      <div>
+        <div class="opt-label">运行后端</div>
+        <div class="seg" id="backendSeg">
+          <button data-v="metal"><b>Metal</b><span>GPU 加速 · 推荐</span></button>
+          <button data-v="cpu"><b>CPU</b><span>备用 · 较慢</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="hint" id="hint"></div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">当前模型</div><div class="v" id="sModel">—</div></div>
+      <div class="stat"><div class="k">后端</div><div class="v" id="sBackend">—</div></div>
+      <div class="stat"><div class="k">内存占用</div><div class="v" id="sMem">—</div></div>
+      <div class="stat"><div class="k">已运行</div><div class="v" id="sUp">—</div></div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="card action primary" id="openUi" disabled>
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></div>
+      <div class="t">打开语音网页</div><div class="d">生成 · 克隆 · 声音库</div>
+    </button>
+    <button class="card action" data-open="outputs">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+      <div class="t">输出音频</div><div class="d">outputs 文件夹</div>
+    </button>
+    <button class="card action" data-open="voices">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg></div>
+      <div class="t">保存的声音</div><div class="d">voices 文件夹</div>
+    </button>
+    <button class="card action" data-open="logs">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div>
+      <div class="t">运行日志</div><div class="d">排查问题用</div>
+    </button>
+  </div>
+
+  <div class="offline">
+    <b>控制服务没有响应。</b> 面板需要后台的小型控制服务才能启动和停止语音模型。<br>
+    请在“终端”中运行以下命令重新安装，然后刷新本页：<br>
+    <code>/bin/bash "__ROOT__/panel/install-panel.sh"</code>
+  </div>
+
+  <section class="card console-card" id="consoleCard">
+    <div class="console-head" id="consoleHead">
+      <span class="t">运行输出</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <pre class="console" id="console">暂无输出</pre>
+  </section>
+
+  <footer>关闭本页不会停止模型 · 用完点击“停止”释放内存 · 模型权重受 BreezeBlue 非商业许可约束</footer>
+</div>
+
+<script>
+(() => {
+  const API = 'http://127.0.0.1:__PORT__';
+  const TOKEN = '__TOKEN__';
+  const $ = (id) => document.getElementById(id);
+  const app = $('app');
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
+
+  // Theme toggle: system → light/dark override, remembered per browser.
+  const root = document.documentElement;
+  const savedTheme = store.get('breeze-theme');
+  if (savedTheme) root.dataset.theme = savedTheme;
+  $('themeBtn').onclick = () => {
+    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    store.set('breeze-theme', root.dataset.theme);
+  };
+
+  let last = null;
+  let choice = { model: null, backend: null };
+  let pending = null;          // optimistic action while the job spins up
+  let pollTimer = null;
+
+  async function call(path, method = 'GET', body) {
+    const res = await fetch(API + path, {
+      method, headers: { 'X-Panel-Token': TOKEN, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined, cache: 'no-store',
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 409) throw new Error(data.error || ('HTTP ' + res.status));
+    return data;
+  }
+
+  function setSeg(seg, value, disabled) {
+    for (const b of $(seg).querySelectorAll('button')) {
+      b.setAttribute('aria-pressed', String(b.dataset.v === value));
+      b.disabled = disabled;
+    }
+  }
+  for (const [seg, key] of [['modelSeg', 'model'], ['backendSeg', 'backend']]) {
+    $(seg).addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b || b.disabled) return;
+      choice[key] = b.dataset.v;
+      store.set('breeze-' + key, b.dataset.v);
+      render();
+    });
+  }
+
+  function fmtUptime(iso) {
+    if (!iso) return '—';
+    let s = Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 1000));
+    const h = Math.floor(s / 3600); s -= h * 3600;
+    const m = Math.floor(s / 60); s -= m * 60;
+    return h ? `${h} 时 ${m} 分` : m ? `${m} 分 ${s} 秒` : `${s} 秒`;
+  }
+  const modelName = (file) => !file ? '—' : file.includes('f16') ? 'F16' : file.includes('q8') ? 'Q8_0' : file;
+  const modelKey = (file) => !file ? null : file.includes('f16') ? 'F16' : 'Q8';
+
+  function deriveState() {
+    if (!last) return 'loading';
+    if (last.offline) return 'offline';
+    const job = last.job || {};
+    const rt = last.runtime || {};
+    if (pending || job.running) return (pending || job.action) === 'stop' ? 'stopping' : 'starting';
+    if (rt.backend_healthy && rt.ui_healthy) return 'running';
+    if (job.exit_code && job.exit_code !== 0) return 'error';
+    if (rt.server_running || rt.ui_running) return 'partial';
+    return 'stopped';
+  }
+
+  function render() {
+    const state = deriveState();
+    app.dataset.state = state;
+    const rt = (last && last.runtime) || {};
+    const job = (last && last.job) || {};
+    const srv = rt.server;
+
+    if (!choice.model) choice.model = store.get('breeze-model') || (rt.configured && rt.configured.model) || 'Q8';
+    if (!choice.backend) choice.backend = store.get('breeze-backend') || (rt.configured && rt.configured.backend) || 'metal';
+    if (rt.binaries && !rt.binaries.metal && choice.backend === 'metal' && rt.binaries.cpu) choice.backend = 'cpu';
+
+    const busy = state === 'starting' || state === 'stopping' || state === 'loading' || state === 'offline';
+    setSeg('modelSeg', choice.model, busy);
+    setSeg('backendSeg', choice.backend, busy);
+    if (rt.binaries) for (const b of $('backendSeg').querySelectorAll('button')) if (!rt.binaries[b.dataset.v]) b.disabled = true;
+
+    const differs = state === 'running' && srv && (modelKey(srv.model) !== choice.model || srv.backend !== choice.backend);
+    const btn = $('mainBtn');
+    const label = btn.querySelector('span');
+    const icon = btn.querySelector('svg');
+    const playIcon = '<path d="M8 5v14l11-7z"/>';
+    const stopIcon = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
+    const swapIcon = '<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    btn.classList.remove('stop');
+    btn.disabled = busy;
+    if (state === 'running' && differs) { label.textContent = '应用并重启'; icon.innerHTML = swapIcon; btn.dataset.act = 'start'; }
+    else if (state === 'running' || state === 'partial') { label.textContent = '停止'; icon.innerHTML = stopIcon; btn.classList.add('stop'); btn.dataset.act = 'stop'; }
+    else if (state === 'starting') { label.textContent = '启动中…'; icon.innerHTML = playIcon; }
+    else if (state === 'stopping') { label.textContent = '停止中…'; icon.innerHTML = stopIcon; btn.classList.add('stop'); }
+    else { label.textContent = state === 'error' ? '重试启动' : '启动'; icon.innerHTML = playIcon; btn.dataset.act = 'start'; }
+
+    const titles = {
+      loading: ['正在连接…', '读取服务状态'],
+      offline: ['控制服务未运行', '无法连接本机控制服务'],
+      stopped: ['已停止', '模型未加载，不占用内存'],
+      starting: ['正在启动', '加载模型中，首次 Metal 启动需编译着色器，请稍候'],
+      stopping: ['正在停止', '释放模型和网页服务'],
+      running: ['运行中', rt.url ? `语音网页：${rt.url}` : ''],
+      partial: ['部分运行', '仅有部分服务在运行，可先停止再重新启动'],
+      error: ['操作失败', (job.output || []).filter(Boolean).slice(-1)[0] || '请查看下方运行输出'],
+    };
+    $('statusTitle').textContent = titles[state][0];
+    $('statusSub').textContent = titles[state][1];
+
+    let hint = '';
+    if (differs) hint = `当前运行 ${modelName(srv.model)} · ${srv.backend === 'cpu' ? 'CPU' : 'Metal'}，点击“应用并重启”切换到所选配置。`;
+    else if (choice.backend === 'cpu' && !busy && state !== 'running') hint = 'CPU 模式生成速度明显较慢，仅在 Metal 无法使用时选择。';
+    else if (choice.model === 'F16' && !busy && state !== 'running') hint = 'F16 约占用 6–8 GB 内存，Q8 速度更快、质量接近。';
+    $('hint').textContent = hint;
+
+    $('sModel').textContent = srv ? modelName(srv.model) : '—';
+    $('sBackend').textContent = srv ? (srv.backend === 'cpu' ? 'CPU' : 'Metal') : '—';
+    $('sMem').textContent = srv && srv.rss_mb != null ? (srv.rss_mb >= 1024 ? (srv.rss_mb / 1024).toFixed(1) + ' GB' : Math.round(srv.rss_mb) + ' MB') : '—';
+    $('sUp').textContent = srv && state === 'running' ? fmtUptime(srv.started_at) : '—';
+
+    $('openUi').disabled = state !== 'running';
+    for (const b of document.querySelectorAll('[data-open]')) b.disabled = state === 'offline' || state === 'loading';
+
+    const lines = job.output || [];
+    const pre = $('console');
+    const text = lines.length ? lines.join('\n') : '暂无输出';
+    if (pre.textContent !== text) { pre.textContent = text; pre.scrollTop = pre.scrollHeight; }
+    if (state === 'starting' || state === 'error') $('consoleCard').classList.add('open');
+  }
+
+  async function refresh() {
+    try {
+      const data = await call('/status');
+      last = data;
+      if (pending && data.job && (data.job.running || data.job.finished_at)) pending = null;
+    } catch (e) {
+      last = { offline: true };
+      pending = null;
+    }
+    render();
+    schedule();
+  }
+  function schedule() {
+    clearTimeout(pollTimer);
+    const st = deriveState();
+    const fast = st === 'starting' || st === 'stopping' || st === 'loading';
+    pollTimer = setTimeout(refresh, fast ? 1200 : st === 'offline' ? 5000 : 3000);
+  }
+
+  $('mainBtn').onclick = async () => {
+    const act = $('mainBtn').dataset.act;
+    pending = act;
+    render();
+    try {
+      await call(act === 'stop' ? '/stop' : '/start', 'POST', act === 'stop' ? {} : { model: choice.model, backend: choice.backend });
+    } catch (e) {
+      pending = null;
+    }
+    refresh();
+  };
+  $('openUi').onclick = () => { if (last && last.runtime) window.open(last.runtime.url, '_blank'); };
+  for (const b of document.querySelectorAll('[data-open]')) b.onclick = () => call('/open', 'POST', { target: b.dataset.open }).catch(() => {});
+  $('consoleHead').onclick = () => $('consoleCard').classList.toggle('open');
+
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  refresh();
+})();
+</script>
+</body>
+</html>

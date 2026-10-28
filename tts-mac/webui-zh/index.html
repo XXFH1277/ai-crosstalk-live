@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Breeze TTS 2 · 本地语音合成</title>
+<link rel="stylesheet" href="/style.css" />
+<script>
+  // Restore the theme chosen with the header toggle before first paint.
+  try { const t = localStorage.getItem("breeze-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="logo" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>
+  </div>
+  <div class="brand">
+    <h1>Breeze TTS 2</h1>
+    <p>中英文语音合成 · 声音设计、克隆、演绎与变声</p>
+  </div>
+  <button class="theme-btn" id="theme-btn" type="button" title="切换深浅色" aria-label="切换深浅色">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  </button>
+</header>
+
+<div class="layout">
+<div class="workspace">
+  <nav class="tabs">
+    <button class="tab active" data-tab="design">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z"/></svg>
+      声音设计</button>
+    <button class="tab" data-tab="clone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg>
+      声音克隆</button>
+    <button class="tab" data-tab="direction">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5s1.3 2 3.5 2 3.5-2 3.5-2M9 9.5h.01M15 9.5h.01"/></svg>
+      声音演绎</button>
+    <button class="tab" data-tab="changer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/></svg>
+      音频变声</button>
+    <button class="tab" data-tab="library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M9 19V5M14 19l-1-14M18.5 19L16 5.5"/></svg>
+      声音库</button>
+  </nav>
+
+  <main>
+    <section class="panel active" id="design">
+      <p class="panel-intro">用一句话描述想要的声音，模型会据此设计一个全新的音色。</p>
+      <label>朗读文本
+        <textarea data-f="text" rows="4" placeholder="欢迎来到今天的故事时间，让我们一起开始吧。"></textarea>
+      </label>
+      <label>声音描述
+        <textarea data-f="instruction" aria-describedby="design-instruction-hint" rows="2" placeholder="一位温柔自然的年轻女性，普通话标准，声音清晰，语气平静亲切。"></textarea>
+        <span class="field-hint" id="design-instruction-hint">修改描述后，请点击“生成语音”重新生成；若仍在生成，请先停止。修改不会改变已生成或正在播放的音频。</span>
+      </label>
+      <div class="row">
+        <label>指令强度（CFG） <input data-f="cfg" type="number" value="1" min="1" max="10" step="0.5" /></label>
+        <label>随机种子 <input data-f="seed" type="number" value="42" /></label>
+      </div>
+      <button class="go">生成语音</button>
+    </section>
+
+    <section class="panel" id="clone">
+      <p class="panel-intro">使用已保存的声音，或上传一段参考录音和它的准确文字稿来复刻音色。</p>
+      <label>朗读文本
+        <textarea data-f="text" rows="4" placeholder="过了这么久，还能再次听到你的声音，真好。"></textarea>
+      </label>
+      <label>已保存的声音
+        <select data-f="voice_id"><option value="">上传参考音频</option></select>
+      </label>
+      <p class="voice-desc"></p>
+      <div class="refblock">
+        <label>参考音频（WAV）
+          <input data-f="ref_audio" type="file" accept="audio/*" />
+        </label>
+        <label>参考音频文字稿（需与音频完全一致）
+          <textarea data-f="ref_text" rows="2" placeholder="请填写参考音频中说出的全部内容，保持文字与音频一致。"></textarea>
+        </label>
+        <label>声音备注（选填，与声音一同保存）
+          <textarea data-f="save_desc" rows="2" placeholder="嗓音略带沙哑的年长讲述者，语速舒缓、温暖，适合有声书。"></textarea>
+        </label>
+        <div class="row saverow">
+          <label>声音名称（英文、数字、- 或 _） <input data-f="save_name" type="text" placeholder="例如：my_voice" /></label>
+          <button class="save-voice">保存声音</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>随机种子 <input data-f="seed" type="number" value="42" /></label>
+      </div>
+      <button class="go">生成语音</button>
+    </section>
+
+    <section class="panel" id="direction">
+      <p class="panel-intro">在克隆音色的基础上，用文字指挥语气、情绪和语速。</p>
+      <label>朗读文本
+        <textarea data-f="text" rows="4" placeholder="我们需要谈谈昨晚发生的事情。"></textarea>
+      </label>
+      <label>演绎要求（语气、情绪和语速）
+        <textarea data-f="instruction" aria-describedby="direction-instruction-hint" rows="2" placeholder="请放慢语速，用克制、严肃的语气朗读。"></textarea>
+        <span class="field-hint" id="direction-instruction-hint">修改描述后，请点击“生成语音”重新生成；若仍在生成，请先停止。修改不会改变已生成或正在播放的音频。</span>
+      </label>
+      <label>已保存的声音
+        <select data-f="voice_id"><option value="">上传参考音频</option></select>
+      </label>
+      <p class="voice-desc"></p>
+      <div class="refblock">
+        <label>参考音频（WAV）
+          <input data-f="ref_audio" type="file" accept="audio/*" />
+        </label>
+        <label>参考音频文字稿（需与音频完全一致）
+          <textarea data-f="ref_text" rows="2" placeholder="请填写参考音频中说出的全部内容，保持文字与音频一致。"></textarea>
+        </label>
+        <label>声音备注（选填，与声音一同保存）
+          <textarea data-f="save_desc" rows="2" placeholder="嗓音略带沙哑的年长讲述者，语速舒缓、温暖，适合有声书。"></textarea>
+        </label>
+        <div class="row saverow">
+          <label>声音名称（英文、数字、- 或 _） <input data-f="save_name" type="text" placeholder="例如：my_voice" /></label>
+          <button class="save-voice">保存声音</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>指令强度（CFG） <input data-f="cfg" type="number" value="1" min="1" max="10" step="0.5" /></label>
+        <label>随机种子 <input data-f="seed" type="number" value="42" /></label>
+      </div>
+      <button class="go">生成语音</button>
+    </section>
+
+    <section class="panel" id="changer">
+      <p class="note">将已有录音转换为另一种声音，保留原有内容和节奏，无需提供文字。音高通常跟随目标声音；如果原音频包含歌唱或明显的语调变化，可提高“旋律保留程度”。</p>
+      <label>原始音频（WAV）
+        <input data-f="source" type="file" accept="audio/*" />
+      </label>
+      <label>已保存的声音
+        <select data-f="voice_id"><option value="">上传参考音频</option></select>
+      </label>
+      <p class="voice-desc"></p>
+      <div class="refblock">
+        <label>目标声音音频（WAV）
+          <input data-f="ref_audio" type="file" accept="audio/*" />
+        </label>
+        <label>目标声音文字稿（需与音频完全一致）
+          <textarea data-f="ref_text" rows="2" placeholder="请填写目标声音音频中说出的全部内容。"></textarea>
+        </label>
+        <label>声音备注（选填，与声音一同保存）
+          <textarea data-f="save_desc" rows="2" placeholder="嗓音略带沙哑的年长讲述者，语速舒缓、温暖，适合有声书。"></textarea>
+        </label>
+        <div class="row saverow">
+          <label>声音名称（英文、数字、- 或 _） <input data-f="save_name" type="text" placeholder="例如：my_voice" /></label>
+          <button class="save-voice">保存声音</button>
+        </div>
+      </div>
+      <label>原始音频文字稿（选填，可提高吐字清晰度）
+        <textarea data-f="text" rows="2" placeholder="如有原始音频的准确文字稿，请填写；否则留空。"></textarea>
+      </label>
+      <div class="row">
+        <label>旋律保留程度 <input data-f="keep_acoustic" type="number" value="0" min="0" max="6" step="1" /></label>
+        <label>随机种子 <input data-f="seed" type="number" value="42" /></label>
+      </div>
+      <button class="go">开始变声</button>
+    </section>
+
+    <section class="panel" id="library">
+      <div class="row libbar">
+        <label>筛选 <input id="libfilter" type="text" placeholder="搜索名称、备注、文字稿或附加字段" /></label>
+        <button id="librefresh" class="ghost">刷新</button>
+      </div>
+      <p class="note" id="libcount"></p>
+      <div id="liblist"></div>
+    </section>
+  </main>
+</div>
+
+<aside class="sidebar">
+  <section class="model-control" id="model-control" aria-label="选择语音模型" aria-busy="true">
+    <div class="model-heading"><strong>语音模型</strong><span id="model-current">当前模型：正在读取…</span></div>
+    <div class="model-row">
+      <label for="model-select">生成前选择模型
+        <select id="model-select" aria-describedby="model-message" disabled><option value="">正在读取…</option></select>
+      </label>
+      <div class="model-buttons">
+        <button id="model-apply" class="ghost" type="button" disabled>切换模型</button>
+        <button id="model-refresh" class="ghost" type="button">刷新状态</button>
+      </div>
+    </div>
+    <p id="model-message" role="status" aria-live="polite">正在读取模型状态…</p>
+  </section>
+
+  <section class="output">
+    <div class="output-title">播放与输出</div>
+    <div class="row">
+      <label class="toggle"><input id="stream" type="checkbox" checked /> 边生成边播放</label>
+      <label class="slider">播放缓冲 <output id="bufval">1.25 秒</output>
+        <input id="buffer" type="range" min="0" max="4" step="0.25" value="1.25" />
+      </label>
+    </div>
+    <div class="status" id="status">就绪</div>
+    <button id="stop" class="stop">停止生成</button>
+    <audio id="player" controls></audio>
+    <a id="download" class="dl" download="breeze.wav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+      下载音频（WAV）</a>
+  </section>
+
+  <footer>可在朗读文本中加入声音动作：中文使用 [笑]、[叹气]、[咳嗽]、[清嗓子]；英文使用 (laugh)、(sigh)、(gasp)、(yawn)、(whispers)。如果动作标签被直接读出，可更换随机种子后重新生成。</footer>
+</aside>
+</div>
+</div>
+<script>
+  document.getElementById("theme-btn").addEventListener("click", () => {
+    const root = document.documentElement;
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("breeze-theme", root.dataset.theme); } catch (e) {}
+  });
+</script>
+<script src="/model-selector.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

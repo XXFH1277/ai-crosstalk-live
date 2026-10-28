@@ -1,0 +1,57 @@
+{
+  "archives": [
+    {
+      "id": "python",
+      "sha256_verified": true,
+      "entries": 1665,
+      "symlinks": 10,
+      "paths_and_links_within_archive_root": true
+    },
+    {
+      "id": "cmake",
+      "sha256_verified": true,
+      "entries": 8218,
+      "symlinks": 13,
+      "paths_and_links_within_archive_root": true
+    },
+    {
+      "id": "breeze",
+      "sha256_verified": true,
+      "entries": 104,
+      "symlinks": 0,
+      "paths_and_links_within_archive_root": true
+    },
+    {
+      "id": "ggml",
+      "sha256_verified": true,
+      "entries": 2288,
+      "symlinks": 1,
+      "paths_and_links_within_archive_root": true
+    },
+    {
+      "id": "shine",
+      "sha256_verified": true,
+      "entries": 101,
+      "symlinks": 4,
+      "paths_and_links_within_archive_root": true
+    }
+  ],
+  "binary_inspection": {
+    "python": {
+      "format": "Mach-O 64-bit",
+      "cpu": "arm64",
+      "minimum_macos": "11.0",
+      "executed": false
+    },
+    "cmake": {
+      "format": "Mach-O universal",
+      "cpu": [
+        "x86_64",
+        "arm64"
+      ],
+      "minimum_macos_arm64": "11.0",
+      "executed": false
+    }
+  },
+  "note": "Inspected and hash-verified on Windows; execution and codesign/Gatekeeper evaluation require macOS."
+}

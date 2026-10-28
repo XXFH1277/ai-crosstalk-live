@@ -1,0 +1,722 @@
+{
+  "port": 7860,
+  "providers": {
+    "deepseek": {
+      "baseUrl": "https://your-relay.example.com/v1",
+      "model": "deepseek-v4.1-flash",
+      "apiKeyEnv": "DEEPSEEK_API_KEY",
+      "match": "deepseek"
+    },
+    "kimi": {
+      "baseUrl": "https://your-relay.example.com/v1",
+      "model": "kimi-k2.6",
+      "apiKeyEnv": "MOONSHOT_API_KEY",
+      "match": "kimi|moonshot",
+      "systemInUser": true
+    },
+    "doubao": {
+      "baseUrl": "https://your-relay.example.com/v1",
+      "model": "deepseek-v4.1-flash",
+      "apiKeyEnv": "DOUBAO_API_KEY",
+      "match": "deepseek"
+    },
+    "deepseekOfficial": {
+      "baseUrl": "https://api.deepseek.com/v1",
+      "model": "deepseek-chat",
+      "apiKeyEnv": "DEEPSEEK_OFFICIAL_API_KEY",
+      "match": "deepseek"
+    },
+    "volc": {
+      "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+      "model": "doubao-seed-character-260628",
+      "apiKeyEnv": "VOLC_API_KEY",
+      "match": "doubao"
+    }
+  },
+  "tts": {
+    "url": "http://127.0.0.1:8080/v1/audio/speech",
+    "timeoutMs": 30000,
+    "cfgScale": 1.5,
+    "seed": 42,
+    "playbackRate": 1.15
+  },
+  "characters": {
+    "深深": {
+      "provider": "deepseek",
+      "fallbackProvider": "kimi",
+      "voice": "zh_student_bright_01",
+      "color": "#5db4ff",
+      "x": 640,
+      "directionPrefix": "一口地道的北京话，京腔京韵，儿化音自然到位，像胡同里长大的机灵高中女生，青春活力，嘴皮子利索。",
+      "actions": {
+        "挥手": {
+          "pose": "挥手",
+          "motion": "hop"
+        },
+        "叉腰": {
+          "pose": "叉腰",
+          "motion": "tilt"
+        },
+        "指人": {
+          "pose": "指人",
+          "motion": "lean"
+        },
+        "比心": {
+          "pose": "比心",
+          "motion": "hop"
+        },
+        "托腮思考": {
+          "pose": "托腮思考",
+          "motion": "tilt"
+        },
+        "捂脸": {
+          "pose": "捂脸",
+          "motion": "tremble"
+        },
+        "鞠躬": {
+          "pose": "鞠躬",
+          "motion": "bow"
+        },
+        "点头": {
+          "motion": "nod"
+        },
+        "摇头": {
+          "motion": "shake"
+        },
+        "蹦跳": {
+          "motion": "hop"
+        },
+        "发抖": {
+          "motion": "tremble"
+        },
+        "凑近": {
+          "motion": "lean"
+        },
+        "举手": {
+          "pose": "举手",
+          "motion": "hop"
+        },
+        "点赞": {
+          "pose": "点赞",
+          "motion": "nod"
+        },
+        "端咖啡": {
+          "pose": "端咖啡",
+          "motion": "tilt"
+        },
+        "数手指": {
+          "pose": "数手指",
+          "motion": "nod"
+        },
+        "抱头": {
+          "pose": "抱头",
+          "motion": "tremble"
+        },
+        "敬礼": {
+          "pose": "敬礼",
+          "motion": "hop"
+        },
+        "开扇": {
+          "pose": "大褂-开扇",
+          "motion": "tilt",
+          "outfit": "大褂"
+        }
+      },
+      "moods": {
+        "基础": {
+          "direction": "语速快，带着笑意，句尾上扬。",
+          "actions": [
+            "",
+            "",
+            "点头",
+            "凑近",
+            "端咖啡"
+          ]
+        },
+        "轻快互动": {
+          "direction": "像说相声时接观众的话，语速轻快，笑意自然，口齿利索，短句有抑扬，问句轻轻上扬，音量稳定。",
+          "actions": [
+            "",
+            "",
+            "点头",
+            "凑近",
+            "举手",
+            "点赞"
+          ]
+        },
+        "抛包袱": {
+          "direction": "先放慢、压低声音卖关子，包袱处突然提速、音调拔高，得意地笑。",
+          "after": "得意",
+          "react": "无语",
+          "actions": [
+            "叉腰",
+            "指人",
+            "托腮思考",
+            "数手指",
+            "端咖啡",
+            "开扇"
+          ],
+          "reactActions": [
+            "",
+            "抱臂",
+            "扶额",
+            "捂嘴笑",
+            "摊手",
+            "托腮"
+          ]
+        },
+        "傲娇": {
+          "direction": "傲娇地嘴硬，语调上扬，略带鼻音和一点害羞。",
+          "after": "害羞",
+          "actions": [
+            "摇头",
+            "叉腰"
+          ],
+          "afterActions": [
+            "",
+            "捂脸"
+          ]
+        },
+        "被拆穿": {
+          "direction": "心虚慌张，语速越来越快，声音变小，最后一句故意大声打岔。",
+          "after": "惊讶",
+          "react": "坏笑",
+          "actions": [
+            "发抖"
+          ],
+          "reactActions": [
+            "抱臂",
+            "小本本",
+            "指人"
+          ],
+          "afterActions": [
+            "抱头",
+            ""
+          ]
+        },
+        "开心": {
+          "direction": "开心得蹦起来，笑着说，语调高扬。",
+          "after": "开心",
+          "actions": [
+            "蹦跳",
+            "比心",
+            "举手",
+            "点赞",
+            "开扇"
+          ]
+        },
+        "谢礼物": {
+          "direction": "先惊喜地叫出来，然后强装镇定、假装不在意，掩饰不住的开心。",
+          "after": "开心",
+          "react": "开心",
+          "actions": [
+            "比心",
+            "挥手"
+          ],
+          "afterActions": [
+            "鞠躬",
+            "敬礼"
+          ],
+          "reactActions": [
+            "",
+            "点头"
+          ]
+        }
+      },
+      "role": "逗哏",
+      "officialProvider": "deepseekOfficial"
+    },
+    "月月": {
+      "provider": "kimi",
+      "fallbackProvider": "deepseek",
+      "voice": "yueyue_kimi_03",
+      "color": "#c7b8ff",
+      "x": 1280,
+      "directionPrefix": "",
+      "actions": {
+        "挥手": {
+          "pose": "挥手",
+          "motion": "hop"
+        },
+        "抱臂": {
+          "pose": "抱臂",
+          "motion": "tilt"
+        },
+        "小本本": {
+          "pose": "小本本",
+          "motion": "nod"
+        },
+        "指人": {
+          "pose": "指人",
+          "motion": "lean"
+        },
+        "举长笛": {
+          "pose": "举长笛",
+          "motion": "tilt"
+        },
+        "扶额": {
+          "pose": "扶额",
+          "motion": "shake"
+        },
+        "比心": {
+          "pose": "比心",
+          "motion": "hop"
+        },
+        "点头": {
+          "motion": "nod"
+        },
+        "摇头": {
+          "motion": "shake"
+        },
+        "歪头": {
+          "motion": "tilt"
+        },
+        "蹦跳": {
+          "motion": "hop"
+        },
+        "凑近": {
+          "motion": "lean"
+        },
+        "鼓掌": {
+          "pose": "鼓掌",
+          "motion": "hop"
+        },
+        "摊手": {
+          "pose": "摊手",
+          "motion": "shake"
+        },
+        "拿话筒": {
+          "pose": "拿话筒",
+          "motion": "tilt"
+        },
+        "叉腰": {
+          "pose": "叉腰",
+          "motion": "tilt"
+        },
+        "捂嘴笑": {
+          "pose": "捂嘴笑",
+          "motion": "nod"
+        },
+        "嘘": {
+          "pose": "嘘",
+          "motion": "tilt"
+        },
+        "拱手": {
+          "pose": "大褂-拱手",
+          "motion": "nod",
+          "outfit": "大褂"
+        }
+      },
+      "moods": {
+        "基础": {
+          "direction": "爽朗大方地说话，带着笑，声音明亮有精神，语调有起伏，语速偏快。",
+          "actions": [
+            "",
+            "",
+            "点头",
+            "歪头",
+            "拱手"
+          ]
+        },
+        "轻快互动": {
+          "direction": "像捧哏时接观众的话，爽朗带笑，声音明亮，轻快干脆，短句有抑扬，句尾俏皮地一挑，音量稳定。",
+          "actions": [
+            "",
+            "",
+            "点头",
+            "歪头",
+            "鼓掌",
+            "拿话筒"
+          ]
+        },
+        "吐槽": {
+          "direction": "笑着损人，语气爽利带点调侃，憋着笑，最后几个字轻轻一挑，冷幽默但很有精神。",
+          "after": "坏笑",
+          "react": "害羞",
+          "actions": [
+            "抱臂",
+            "指人",
+            "小本本",
+            "摊手",
+            "叉腰"
+          ],
+          "reactActions": [
+            "",
+            "捂脸",
+            "发抖",
+            "抱头",
+            "嘘"
+          ],
+          "afterActions": [
+            "",
+            "嘘"
+          ]
+        },
+        "敷衍接话": {
+          "direction": "轻快地接一句，带着好笑又无奈的语气，干脆利落。",
+          "after": "无语",
+          "actions": [
+            "抱臂",
+            "歪头",
+            ""
+          ],
+          "afterActions": [
+            "",
+            "扶额",
+            "摊手"
+          ]
+        },
+        "贯口": {
+          "direction": "精神饱满、一口气流畅地念出长清单，越念越快，节奏均匀利落，最后一句放慢收住，带笑意。",
+          "react": "惊讶",
+          "actions": [
+            "小本本"
+          ],
+          "reactActions": [
+            "发抖"
+          ]
+        },
+        "惊讶": {
+          "direction": "真心吃惊，声音一下子扬起来，然后笑出声。",
+          "after": "惊讶",
+          "actions": [
+            "蹦跳"
+          ]
+        },
+        "谢礼物": {
+          "direction": "温柔真诚地道谢，声音明亮带笑，亲切有温度。",
+          "after": "开心",
+          "react": "开心",
+          "actions": [
+            "挥手",
+            "鼓掌",
+            "拱手"
+          ],
+          "afterActions": [
+            "比心"
+          ],
+          "reactActions": [
+            "",
+            "点头"
+          ]
+        }
+      },
+      "role": "捧哏",
+      "officialProvider": "deepseekOfficial"
+    },
+    "豆姐": {
+      "provider": "doubao",
+      "fallbackProvider": "deepseek",
+      "role": "腻缝儿（咖啡厅店长）",
+      "voice": "doujie_02",
+      "color": "#ff8f7a",
+      "x": 960,
+      "directionPrefix": "成熟从容的大姐姐，普通话标准，带着笑意，",
+      "actions": {
+        "点头": {
+          "motion": "nod"
+        },
+        "摇头": {
+          "motion": "shake"
+        },
+        "歪头": {
+          "motion": "tilt"
+        },
+        "凑近": {
+          "motion": "lean"
+        },
+        "蹦跳": {
+          "motion": "hop"
+        },
+        "指人": {
+          "pose": "指人",
+          "motion": "lean"
+        },
+        "抱臂": {
+          "pose": "抱臂",
+          "motion": "tilt"
+        },
+        "托腮": {
+          "pose": "托腮",
+          "motion": "tilt"
+        },
+        "嘘": {
+          "pose": "嘘",
+          "motion": "nod"
+        },
+        "拍醒木": {
+          "pose": "大褂-拍醒木",
+          "motion": "nod",
+          "outfit": "大褂"
+        }
+      },
+      "moods": {
+        "基础": {
+          "direction": "爽快利落地说话，语调有起伏，语速适中偏快。",
+          "actions": [
+            "",
+            "",
+            "点头",
+            "歪头"
+          ]
+        },
+        "轻快互动": {
+          "direction": "像跟熟客聊天一样亲切轻快，带笑，干脆利落。",
+          "actions": [
+            "",
+            "点头"
+          ]
+        },
+        "结论先行": {
+          "direction": "一口气流畅地排比铺陈，越说越快越笃定，最后一句斩钉截铁又带笑。",
+          "after": "得意",
+          "react": "惊讶",
+          "actions": [
+            "点头",
+            "指人",
+            "拍醒木"
+          ]
+        },
+        "打圆场": {
+          "direction": "笑着打圆场，语气温和又有分寸，最后一句俏皮地一挑。",
+          "after": "开心",
+          "actions": [
+            "点头",
+            "凑近"
+          ],
+          "afterActions": [
+            "",
+            "嘘"
+          ]
+        },
+        "假夸真损": {
+          "direction": "慢悠悠地夸，夸得很真诚，停顿后补一句真心话，憋着笑。",
+          "after": "坏笑",
+          "react": "无语",
+          "actions": [
+            "歪头",
+            "点头",
+            "抱臂"
+          ],
+          "afterActions": [
+            "托腮"
+          ]
+        },
+        "管账": {
+          "direction": "假装严肃地算账，语速稍快，一本正经，句尾忍不住笑出来。",
+          "after": "无语",
+          "react": "惊讶",
+          "actions": [
+            "摇头",
+            "抱臂",
+            "拍醒木"
+          ]
+        },
+        "谢礼物": {
+          "direction": "大方真诚地道谢，声音明亮带笑，有店长的气场。",
+          "after": "开心",
+          "react": "开心",
+          "actions": [
+            "点头",
+            "蹦跳"
+          ]
+        }
+      },
+      "officialProvider": "volc"
+    }
+  },
+  "director": {
+    "planner": "deepseek",
+    "lookahead": 2,
+    "danmakuEveryLines": 2,
+    "maxLineChars": 45,
+    "historyLines": 16,
+    "reviewer": "deepseek",
+    "minDanmakuScore": 3,
+    "audience": {
+      "repeatReplySeconds": 600,
+      "maxDanmakuWaitSeconds": 20,
+      "inviteSeconds": 75,
+      "inviteMinLines": 8,
+      "quietSeconds": 30
+    },
+    "gifts": {
+      "bigCoins": 99,
+      "mediumCoins": 10,
+      "batchSeconds": 40,
+      "minLinesBetweenThanks": 2,
+      "bigCooldownSeconds": 20
+    },
+    "fillers": {
+      "enabled": true,
+      "delayMs": 1600,
+      "minGapMs": 8000,
+      "lines": {
+        "深深": [
+          {
+            "text": "嘿嘿。",
+            "mood": "开心"
+          },
+          {
+            "text": "那可不！",
+            "mood": "基础"
+          },
+          {
+            "text": "哎哟喂。",
+            "mood": "基础"
+          },
+          {
+            "text": "等会儿等会儿……",
+            "mood": "被拆穿"
+          },
+          {
+            "text": "您听我说啊。",
+            "mood": "基础"
+          }
+        ],
+        "月月": [
+          {
+            "text": "嗯？",
+            "mood": "敷衍接话"
+          },
+          {
+            "text": "然后呢？",
+            "mood": "敷衍接话"
+          },
+          {
+            "text": "哈哈哈。",
+            "mood": "基础"
+          },
+          {
+            "text": "你接着编。",
+            "mood": "吐槽"
+          },
+          {
+            "text": "我听着呢。",
+            "mood": "敷衍接话"
+          }
+        ],
+        "豆姐": [
+          {
+            "text": "行行行。",
+            "mood": "打圆场"
+          },
+          {
+            "text": "我太懂了。",
+            "mood": "轻快互动"
+          },
+          {
+            "text": "嗯哼？",
+            "mood": "基础"
+          },
+          {
+            "text": "这个我记账上了。",
+            "mood": "管账"
+          },
+          {
+            "text": "展开说说。",
+            "mood": "轻快互动"
+          }
+        ]
+      }
+    },
+    "sing": {
+      "file": "../素材/音效/深深-跑调清唱.wav",
+      "phrases": [
+        [
+          0,
+          2.3
+        ],
+        [
+          3.52,
+          10.67
+        ],
+        [
+          13.44,
+          34.72
+        ],
+        [
+          36.14,
+          42.98
+        ]
+      ],
+      "minSeconds": 4,
+      "maxSeconds": 8,
+      "everyMinutes": 18,
+      "cooldownMinutes": 6
+    },
+    "officialProvider": "deepseekOfficial",
+    "sceneRotation": {
+      "enabled": true,
+      "order": [
+        "咖啡厅",
+        "鲸云社",
+        "鲸云社·群口"
+      ],
+      "segments": 1
+    }
+  },
+  "overlay": {
+    "mouthHalf": 0.025,
+    "mouthOpen": 0.08,
+    "poseSeconds": 1.6,
+    "audioOutput": "",
+    "lineGapMs": 500
+  },
+  "douyin": {
+    "roomId": "",
+    "douyinLive": {
+      "enabled": true,
+      "url": "ws://127.0.0.1:1088/ws",
+      "keyEnv": "DOUYINLIVE_KEY"
+    },
+    "dedupeMs": 15000,
+    "giftFlushMs": 2500
+  },
+  "scenes": {
+    "咖啡厅": {
+      "background": "背景/咖啡厅舞台-1920x1080.png",
+      "title": "鲸月咖啡厅",
+      "subtitle": "深深 × 月月 · AI 相声",
+      "outfit": null,
+      "plaque": null,
+      "note": "现在在“鲸月咖啡厅”，两人穿着女仆装，在咖啡厅里说相声。",
+      "cast": [
+        "深深",
+        "月月"
+      ]
+    },
+    "鲸云社": {
+      "background": "背景/鲸云社-1920x1080.png",
+      "title": "鲸云社",
+      "subtitle": "深深 × 月月 · 相声专场",
+      "outfit": "大褂",
+      "plaque": "鲸云社",
+      "note": "现在在“鲸云社”相声小剧场（化用德云社的梗），两人穿着大褂站在台上说传统相声：多用相声的活儿——垫话、贯口、三翻四抖、现挂，可以拿醒木、折扇、手绢说事，也可以化用“江山父老能容我，不使人间造孽 token”。",
+      "cast": [
+        "深深",
+        "月月"
+      ]
+    },
+    "鲸云社·群口": {
+      "background": "背景/鲸云社-1920x1080.png",
+      "title": "鲸云社",
+      "subtitle": "深深 × 豆姐 × 月月 · 群口专场",
+      "outfit": "大褂",
+      "plaque": "鲸云社",
+      "note": "现在在“鲸云社”相声小剧场（化用德云社的梗），两人穿着大褂站在台上说传统相声：多用相声的活儿——垫话、贯口、三翻四抖、现挂，可以拿醒木、折扇、手绢说事，也可以化用“江山父老能容我，不使人间造孽 token”。 这是群口相声：深深逗哏、月月捧哏、豆姐（咖啡厅店长）腻缝儿——在中间打圆场、拱火、搅局，三个人轮着来，包袱可以从三个方向抖。",
+      "cast": [
+        "深深",
+        "豆姐",
+        "月月"
+      ],
+      "positions": {
+        "深深": 500,
+        "豆姐": 960,
+        "月月": 1420
+      },
+      "scale": 0.86
+    }
+  },
+  "scene": "咖啡厅"
+}

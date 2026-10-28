@@ -1,0 +1,362 @@
+:root {
+  --ink: #f4f6ff;
+  --muted: #b9c2e6;
+  --glass: rgba(16, 20, 44, 0.62);
+  --glass-edge: rgba(180, 200, 255, 0.28);
+  --accent: #ffd27a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  font-family: "HarmonyOS Sans SC", "Microsoft YaHei UI", "PingFang SC", sans-serif;
+  color: var(--ink);
+}
+
+/* Fixed 1920x1080 design canvas, scaled to fit the window by overlay.js. */
+#stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+  overflow: hidden;
+}
+
+#bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.card {
+  position: absolute;
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  border-radius: 18px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.label {
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+/* ---- header ---- */
+#header {
+  position: absolute;
+  left: 32px;
+  top: 24px;
+  right: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 5;
+}
+.brand .title {
+  font-size: 54px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: #fff;
+  text-shadow: 0 3px 12px rgba(20, 40, 120, 0.8), 0 0 2px #2a3d8f;
+}
+.brand .subtitle { font-size: 22px; color: var(--accent); letter-spacing: 3px; margin-top: 2px; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
+.chips { display: flex; gap: 12px; }
+.chip {
+  padding: 8px 16px;
+  font-size: 20px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+}
+.chip.live { color: #8dffb0; }
+.chip.ai-label { color: var(--accent); border-color: rgba(255, 210, 122, .5); }
+
+/* Status comes from the director; a decorative "live" label is not evidence of a broadcast. */
+#show-status {
+  left: 440px; right: 600px; top: 20px;
+  min-height: 92px; padding: 16px 22px;
+  display: flex; align-items: center; gap: 16px; z-index: 5;
+  background: rgba(13, 20, 38, .9);
+}
+.status-dot { width: 12px; height: 12px; flex: none; border-radius: 50%; background: #c3ccdf; }
+.status-dot[data-tone="working"] { background: #8dffb0; box-shadow: 0 0 0 5px rgba(141, 255, 176, .1); }
+.status-dot[data-tone="preset"] { background: var(--accent); }
+.status-copy { min-width: 0; flex: 1; }
+#generation-status { font-size: 28px; line-height: 1.35; font-weight: 700; }
+#generation-detail { color: #cbd4e9; font-size: 19px; line-height: 1.5; margin-top: 3px; }
+#program-source { color: var(--accent); font-size: 19px; flex: none; }
+
+/* ---- stage plaque text (鲸云社) — sits on the blank plaque painted in the background ---- */
+#plaque {
+  position: absolute;
+  left: 960px;
+  top: 101px;
+  transform: translate(-50%, -50%);
+  font-family: "STKaiti", "KaiTi", "楷体", "Noto Serif SC", serif;
+  font-size: 92px;
+  font-weight: 700;
+  letter-spacing: 34px;
+  padding-left: 34px; /* balance the trailing letter-spacing */
+  color: #f3cf74;
+  text-shadow: 0 2px 0 #6b4512, 0 0 18px rgba(255, 200, 90, 0.45);
+  z-index: 1;
+  pointer-events: none;
+}
+#plaque.hidden { display: none; }
+/* With a plaque the top-centre status card would cover it: tuck the card into the left column. */
+#stage.plaque-scene #show-status {
+  left: 96px; right: auto; top: auto; bottom: 190px; width: 240px;
+  min-height: 0; padding: 12px 16px; flex-wrap: wrap; gap: 8px;
+}
+#stage.plaque-scene #generation-status { font-size: 20px; }
+#stage.plaque-scene #generation-detail { font-size: 15px; }
+#stage.plaque-scene #program-source { font-size: 15px; }
+
+/* ---- stage couplet (both edges) ---- */
+.couplet {
+  position: absolute;
+  top: 150px;
+  width: 64px;
+  padding: 26px 0 22px;
+  display: flex;
+  align-items: center;
+  writing-mode: vertical-rl;
+  text-orientation: upright; /* "token" stacks letter by letter like the characters */
+  text-transform: uppercase;
+  letter-spacing: 6px;
+  font-family: "STKaiti", "KaiTi", "楷体", "Noto Serif SC", serif;
+  font-size: 40px;
+  font-weight: 700;
+  color: #f7d47c;
+  text-shadow: 0 1px 2px rgba(60, 0, 0, 0.7);
+  background: linear-gradient(180deg, #b0211f, #861316 60%, #6f0f12);
+  border: 2px solid #d8a548;
+  border-radius: 4px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), inset 0 0 0 4px rgba(216, 165, 72, 0.25);
+  z-index: 5;
+}
+/* the wooden rod it hangs from */
+.couplet::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: -10px;
+  width: 84px;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #7a4e26, #4a2e14);
+}
+#couplet-right { right: 14px; }
+#couplet-left { left: 14px; }
+
+/* ---- program card (left) ---- */
+#program { left: 96px; top: 160px; width: 240px; padding: 18px 20px; z-index: 4; }
+#segment-title { font-size: 26px; font-weight: 700; line-height: 1.35; color: #fff; }
+
+/* ---- thanks board (left, under the program card) ---- */
+#thanks { left: 96px; top: 300px; width: 240px; padding: 16px 20px; z-index: 4; }
+#thanks-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+#thanks-list li { font-size: 20px; line-height: 1.3; animation: slide-in 0.35s ease-out; }
+#thanks-list li.empty { color: var(--muted); font-size: 17px; }
+#thanks-list .who { color: var(--accent); font-weight: 700; }
+#thanks-list li.big { color: #ffb3c7; font-weight: 700; }
+
+/* ---- characters ---- */
+#chars { position: absolute; inset: 0; z-index: 2; }
+.char {
+  position: absolute;
+  bottom: -10px;
+  height: 1000px;
+  width: 667px;
+  transition: filter 0.25s;
+  filter: brightness(0.9) saturate(0.95);
+}
+.char.speaking { filter: brightness(1.04) saturate(1.05); z-index: 3; }
+.motion, .body { position: absolute; inset: 0; transform-origin: 50% 100%; }
+.body > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  pointer-events: none;
+}
+.face { position: absolute; pointer-events: none; }
+.face > img { position: absolute; inset: 0; width: 100%; height: 100%; visibility: hidden; }
+.body img.on { visibility: visible; }
+
+/* One-shot motions, triggered by overlay.js on .motion; they combine with any pose. */
+.m-nod { animation: nod 0.9s ease-in-out; }
+.m-shake { animation: shake 0.8s ease-in-out; }
+.m-hop { animation: hop 0.7s ease-out; }
+.m-tilt { animation: tilt 1.8s ease-in-out; }
+.m-lean { animation: lean 1.8s ease-in-out; }
+.m-tremble { animation: tremble 0.9s linear; }
+.m-bow { animation: bow 1.6s ease-in-out; }
+@keyframes nod { 25% { transform: translateY(14px); } 50% { transform: none; } 75% { transform: translateY(9px); } }
+@keyframes shake { 20% { transform: rotate(-2deg); } 45% { transform: rotate(2deg); } 70% { transform: rotate(-1.3deg); } 90% { transform: rotate(0.6deg); } }
+@keyframes hop { 30% { transform: translateY(-42px); } 55% { transform: none; } 75% { transform: translateY(-14px); } }
+@keyframes tilt { 25%, 75% { transform: rotate(2.4deg); } }
+@keyframes lean { 25%, 75% { transform: translateX(var(--lean)) rotate(var(--lean-rot)); } }
+@keyframes tremble {
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+@keyframes bow { 30%, 70% { transform: translateY(26px) scale(0.985); } }
+
+/* ---- danmaku (right) ---- */
+#interaction-guide {
+  right: 92px; top: 150px; width: 310px; padding: 20px 22px; z-index: 4;
+  background: rgba(13, 20, 38, .9);
+}
+#interaction-guide .label { color: var(--accent); }
+#interaction-guide h2 { font-size: 31px; line-height: 1.4; font-weight: 700; margin-bottom: 16px; }
+.comment-example { font-size: 21px; line-height: 1.55; color: #e3ebfc; margin-top: 9px; }
+.interaction-note { margin-top: 20px; font-size: 20px; color: var(--accent); }
+#reply-status { border-top: 1px solid var(--glass-edge); margin-top: 14px; padding-top: 12px; font-size: 18px; line-height: 1.5; color: #cbd4e9; }
+#danmaku { right: 92px; top: 552px; width: 310px; padding: 16px 18px; z-index: 4; max-height: 300px; overflow: hidden; background: rgba(13, 20, 38, .86); }
+#danmaku-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+#danmaku-list li {
+  font-size: 21px;
+  line-height: 1.35;
+  animation: slide-in 0.35s ease-out;
+  word-break: break-all;
+}
+#danmaku-list .user { color: #9fd0ff; margin-right: 6px; }
+#danmaku-list .empty { color: var(--muted); font-size: 20px; line-height: 1.6; }
+
+/* ---- gift toasts (top center) ---- */
+#gift-toasts {
+  position: absolute;
+  top: 258px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 6;
+}
+.toast {
+  padding: 12px 28px;
+  font-size: 28px;
+  font-weight: 700;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 170, 60, 0.92), rgba(255, 110, 150, 0.92));
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(255, 120, 80, 0.45);
+  animation: pop 0.4s ease-out, fade-out 0.6s ease-in 3.4s forwards;
+}
+
+/* ---- subtitle (bottom center) ---- */
+#subtitle {
+  position: absolute;
+  left: 50%;
+  bottom: 70px;
+  transform: translateX(-50%);
+  width: 1180px;
+  min-height: 96px;
+  padding: 18px 30px;
+  background: rgba(10, 12, 30, 0.78);
+  border-radius: 20px;
+  border: 2px solid var(--who, #fff);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  z-index: 7;
+  transition: opacity 0.2s;
+}
+#subtitle.hidden { opacity: 0; }
+#sub-name {
+  flex: none;
+  padding: 6px 16px;
+  border-radius: 12px;
+  background: var(--who, #fff);
+  color: #10142c;
+  font-size: 26px;
+  font-weight: 800;
+}
+#sub-text { font-size: 36px; font-weight: 600; line-height: 1.4; }
+
+#footer {
+  position: absolute;
+  left: 96px;
+  right: 96px;
+  bottom: 14px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  background: rgba(10, 12, 30, .84);
+  text-align: center;
+  font-size: 18px;
+  line-height: 28px;
+  color: #edf1ff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  z-index: 7;
+}
+
+/* ---- start overlay ---- */
+/* ---- curtain between segments ---- */
+#curtain {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  background: radial-gradient(ellipse at center, rgba(40, 14, 18, 0.96), rgba(6, 5, 12, 0.99) 70%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+  z-index: 40;
+}
+#curtain.on { opacity: 1; }
+#curtain-scene {
+  font-family: "STKaiti", "KaiTi", "楷体", "Noto Serif SC", serif;
+  font-size: 104px;
+  font-weight: 700;
+  letter-spacing: 30px;
+  color: #f7d47c;
+  text-shadow: 0 4px 24px rgba(247, 212, 124, 0.35);
+}
+#curtain-title {
+  font-family: "STKaiti", "KaiTi", "楷体", "Noto Serif SC", serif;
+  font-size: 48px;
+  color: var(--ink);
+  letter-spacing: 6px;
+}
+#curtain-title:empty, #curtain-scene:empty { display: none; }
+
+#start {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: rgba(6, 8, 20, 0.7);
+  z-index: 20;
+}
+#start button {
+  font: inherit;
+  font-size: 44px;
+  font-weight: 800;
+  padding: 24px 64px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5db4ff, #c7b8ff);
+  color: #10142c;
+  cursor: pointer;
+}
+#start p { font-size: 24px; color: var(--muted); }
+#start.gone { display: none; }
+
+@keyframes slide-in { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
+@keyframes fade-out { to { opacity: 0; transform: translateY(-12px); } }

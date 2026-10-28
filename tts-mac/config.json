@@ -1,0 +1,4 @@
+{
+  "model": "breeze-tts-2-q8_0.gguf",
+  "backend": "metal"
+}

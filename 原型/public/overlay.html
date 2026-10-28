@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>鲸月咖啡厅 · 直播画面</title>
+<link rel="stylesheet" href="/public/overlay.css">
+</head>
+<body>
+<div id="stage">
+  <img id="bg" src="/assets/背景/咖啡厅舞台-1920x1080.png" alt="">
+  <!-- Text on the stage plaque, shown only in scenes with a plaque (鲸云社). -->
+  <div id="plaque" class="hidden"></div>
+
+  <header id="header">
+    <div class="brand">
+      <div class="title" id="scene-title">鲸月咖啡厅</div>
+      <div class="subtitle" id="scene-subtitle">深深 × 月月 · AI 相声</div>
+    </div>
+    <div class="chips">
+      <span class="chip ai-label">AI 虚拟角色 · 合成声音</span>
+      <span id="interaction-chip" class="chip">正在读取互动状态</span>
+    </div>
+  </header>
+
+  <!-- Stage couplet: 上联 hangs on the right, 下联 on the left, as on a crosstalk stage. -->
+  <div id="couplet-right" class="couplet">江山父老能容我</div>
+  <div id="couplet-left" class="couplet">不使人间造孽token</div>
+
+  <div id="program" class="card">
+    <div class="label">正在表演</div>
+    <div id="segment-title">准备中……</div>
+  </div>
+
+  <section id="show-status" class="card" aria-label="节目状态" aria-live="polite">
+    <span id="status-dot" class="status-dot" aria-hidden="true"></span>
+    <div class="status-copy">
+      <div id="generation-status">正在读取节目状态</div>
+      <div id="generation-detail">节目包含 AI 生成内容与预设串场</div>
+    </div>
+    <span id="program-source">AI 相声</span>
+  </section>
+
+  <div id="thanks" class="card">
+    <div class="label">感谢榜</div>
+    <ul id="thanks-list"><li class="empty">送礼物的朋友会出现在这里</li></ul>
+  </div>
+
+  <div id="chars"></div>
+
+  <aside id="interaction-guide" class="card" aria-label="评论互动说明">
+    <div class="label">观众来接话</div>
+    <h2>在评论区<br>给我们递个话题</h2>
+    <p class="comment-example">“今天上班最离谱的事……”</p>
+    <p class="comment-example">“深深，你怎么看加班？”</p>
+    <p class="interaction-note">精选弹幕回应 · 无需送礼</p>
+    <div id="reply-status">回复状态读取中</div>
+  </aside>
+
+  <aside id="danmaku" class="card">
+    <div class="label">收到的评论</div>
+    <ul id="danmaku-list"><li class="empty">评论会显示在这里<br>欢迎聊聊今天的趣事</li></ul>
+  </aside>
+
+  <div id="gift-toasts"></div>
+
+  <div id="subtitle" class="hidden">
+    <span id="sub-name"></span>
+    <span id="sub-text"></span>
+  </div>
+
+  <!-- Between segments: dark stage with the scene and the next title, then the lights come up. -->
+  <div id="curtain" aria-hidden="true">
+    <div id="curtain-scene"></div>
+    <div id="curtain-title"></div>
+  </div>
+
+  <footer id="footer">AI 虚拟形象 / 合成声音 · 节目含 AI 生成内容与预设串场 · 评论经筛选后回应，不保证逐条回复</footer>
+
+  <div id="start">
+    <button id="start-btn">点击开始演出</button>
+    <p>浏览器需要点一下才允许播放声音。开播前点一次即可。</p>
+  </div>
+</div>
+<script src="/public/overlay.js"></script>
+</body>
+</html>

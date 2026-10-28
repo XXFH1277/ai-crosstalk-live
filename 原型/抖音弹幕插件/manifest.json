@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "鲸月咖啡厅 · 抖音弹幕转发",
+  "version": "1.0.0",
+  "description": "读取你自己抖音直播间网页上的弹幕和礼物，转发给本机的相声直播程序（127.0.0.1:7860）。只在控制台设置的房间号页面上工作。",
+  "host_permissions": ["http://127.0.0.1:7860/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://live.douyin.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
