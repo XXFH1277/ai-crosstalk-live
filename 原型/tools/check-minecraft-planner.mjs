@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {GamePlanner} from '../minecraft/planner.mjs';
+import {SkillMemory} from '../minecraft/skill-memory.mjs';
+import {validatePlan,recipes} from '../minecraft/skill-knowledge.mjs';
+import {GameTasks,parseTask} from '../minecraft/tasks.mjs';
+globalThis.fetch=()=>{throw Error('离线检查禁止联网');};
+const step={skill:'collect',item:'logs',count:4},plan={goal:'为工具收集木料',steps:[step,{skill:'craft',item:'oak_planks',count:4}]};
+for(const raw of [{goal:'作弊',steps:[{skill:'exec',item:'/give',count:1}]},{goal:'挖矿',steps:[{...step,count:999}]},{lookup:{kind:'url',query:'https://example.com'}},{goal:'越界',steps:[{skill:'farm',item:'lava_bucket',count:1}]}])assert.throws(()=>validatePlan(raw));
+assert.deepEqual(validatePlan({...plan,code:'不应流入执行器'}),plan);
+const bot={registry:{itemsByName:{oak_planks:{id:2}},items:{1:{name:'oak_log'}}},inventory:{items:()=>[{name:'oak_log',count:2}]},recipesAll:()=>[{result:{count:4},requiresTable:false,delta:[{id:1,count:-1},{id:2,count:4}]}]};
+assert.deepEqual(recipes(bot,'oak_planks').recipes[0],{output:4,table:false,ingredients:[{item:'oak_log',count:1,have:2}]});
+assert.equal(parseTask('月月，开田','p').requiredSkill,'farm');assert.equal(parseTask('你会种田吗？','p'),null);
+const dir=mkdtempSync(join(tmpdir(),'minecraft-skills-'));
+try{
+ const file=join(dir,'memory.json'),memory=new SkillMemory(file);memory.record(plan,true,'实际入包');memory.record(plan,false,'材料不足');
+ const restored=new SkillMemory(file);assert.equal(restored.snapshot().verified,1);assert.equal(restored.context()[0].failures,1);assert.ok(!JSON.stringify(restored.context()).includes('position'));
+ restored.record({goal:'看风景',steps:[{skill:'explore',count:1,item:''}]},true,'走动');assert.equal(restored.snapshot().attempted,1);
+}finally{rmSync(dir,{recursive:true,force:true});}
+let now=1000,calls=0,executed=[],contexts=[];
+const bridge={who:'深深',session:1,bot,state:{status:'已入服'},stop(){}};
+const view=()=>({who:'深深',status:'已入服',inventory:[],position:{x:0,y:64,z:0}});
+const planner=new GamePlanner({bridges:[bridge],observe:view,now:()=>now,think:async context=>{calls++;contexts.push(context);return calls===1?{lookup:{kind:'recipe',query:'oak_planks'}}:plan;},execute:async(b,s)=>{executed.push(s);return {ok:true,text:'已核实'};}});
+const tasks=new GameTasks({bridges:[bridge],observe:view,planner,now:()=>now,publish(){},options(){throw Error('不应回到旧循环');},execute(){throw Error('不应回到旧循环');}});
+const flush=async()=>{for(let i=0;i<8;i++)await new Promise(r=>setImmediate(r));};
+tasks.assign({mode:'auto',actors:['深深'],quota:4});tasks.tick();await flush();
+assert.equal(calls,2);assert.equal(executed.length,1);assert.equal(contexts[1].facts[0].item,'oak_planks');
+now+=1000;tasks.tick();await flush();assert.equal(calls,2,'第二步沿用已有计划，不再请求模型');assert.equal(executed.length,2);assert.equal(planner.memory.snapshot().verified,1);
+planner.think=async context=>{contexts.push(context);return {goal:'补木料',steps:[step]};};planner.execute=async()=>({ok:false,text:'无法到达，实际入包 0/4'});
+now+=1000;tasks.tick();await flush();assert.equal(tasks.snapshot()[0].status,'等待条件');
+now+=3000;tasks.tick();await flush();assert.match(JSON.stringify(contexts.at(-1).feedback),/无法到达/,'失败必须反馈给下一轮');
+let resolve;planner.think=()=>new Promise(r=>resolve=r);now+=3000;tasks.tick();await flush();tasks.stop();resolve(plan);await flush();assert.equal(tasks.jobs.size,0);assert.equal(planner.states.size,0,'停止后不能复活旧计划');
+planner.execute=async(b,s)=>{executed.push(s);return {ok:true,text:'已入包4个'};};planner.think=()=>{throw Error('手动采集不需要规划请求');};
+tasks.assign({mode:'wood',actors:['深深'],quota:4});tasks.tick();await flush();assert.equal(tasks.snapshot()[0].status,'已完成');assert.equal(executed.at(-1).count,4);
+console.log('游戏规划、资料查询、持续步骤、失败反馈、取消、经验存储检查通过');

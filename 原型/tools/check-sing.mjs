@@ -8,6 +8,7 @@ import { Guard } from '../lib/guard.mjs';
 const root = new URL('..', import.meta.url);
 const read = f => JSON.parse(readFileSync(new URL(f, root), 'utf8'));
 const config = read('config.json');
+config.scene = '咖啡厅'; // 深深 must be on stage to sing, whatever scene was last picked
 // 清唱录音不随仓库分发：没有自己的录音时，生成一段 45 秒的测试音代替
 if (!existsSync(new URL(`lib/../${config.director.sing.file}`, root))) {
   const rate = 16000, n = rate * 45, pcm = Buffer.alloc(n * 2);
@@ -25,7 +26,7 @@ const fake = { name: 'fake', usable: true, async json(_s, user) {
   return { text: user.includes('清唱一小段') ? '咳咳，本鲸开嗓了！' : '停停停，耳朵要报警了。', mood: '开心' };
 } };
 const d = new Director({ config, library: read('段子库.json'), prompts: { 深深: '', 月月: '', 审核: '' },
-  providers: { deepseek: fake, kimi: fake }, guard: new Guard(new URL('违禁词.txt', root)), emit: () => {} });
+  providers: Object.fromEntries(Object.keys(config.providers).map(k => [k, fake])), guard: new Guard(new URL('违禁词.txt', root)), emit: () => {} });
 d.log = () => {};
 assert.ok(d.clip, 'recording loaded');
 

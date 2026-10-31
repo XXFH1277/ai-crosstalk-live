@@ -56,5 +56,5 @@ for (const who of ['深深', '月月']) {
   assert.deepEqual(await director.compose({ who, abort: new AbortController(), job: { kind: 'invite' } }), []);
 }
 assert.equal(config.overlay.lineGapMs, 500);
-assert.equal(config.overlay.audioOutput, '');
-console.log('PASS: both characters use lively audience tone; original show moods, 0.5s gap and system audio retained. No network calls.');
+assert.equal(typeof config.overlay.audioOutput, 'string'); // device picked on the control panel
+console.log('PASS: both characters use lively audience tone; original show moods, 0.5s gap and the audio output setting retained. No network calls.');

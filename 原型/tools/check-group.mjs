@@ -20,7 +20,7 @@ const fake = { name: 'fake', usable: true, async json(_s, user) {
   return { text: '测试台词', mood: '基础', action: '' };
 } };
 const d = new Director({ config, library: read('段子库.json'), prompts: Object.fromEntries([...cast, '导演', '审核'].map(n => [n, ''])),
-  providers: { deepseek: fake, kimi: fake, doubao: fake }, guard: new Guard(new URL('违禁词.txt', root)), emit: () => {} });
+  providers: Object.fromEntries(Object.keys(config.providers).map(k => [k, fake])), guard: new Guard(new URL('违禁词.txt', root)), emit: () => {} });
 d.log = () => {};
 
 assert.deepEqual(d.cast(), ['深深', '豆姐', '月月']);

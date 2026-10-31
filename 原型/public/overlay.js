@@ -111,9 +111,15 @@ const getJSON = async url => {
 const pct = (v, total) => `${(v / total) * 100}%`;
 
 // ---- characters ----
-async function buildCharacter(name) {
-  const face = await getJSON(`/assets/透明/${name}-脸.json`);
-  const poseMeta = (await getJSON(`/assets/透明/${name}-动作.json`)) || {};
+// A character can have whole extra picture sets (config `characters.<name>.sets`, e.g. the upright
+// 万圣 set drawn with its own face patches). Each set is built as its own element; a scene with
+// `set` shows that one instead of the usual pictures, and chars[name] points at whichever is shown.
+const skins = {}; // name -> { sprite -> character object }
+let currentSet = null;
+
+async function buildCharacter(name, sprite = name, fr = cfg.characters[name].frame) {
+  const face = await getJSON(`/assets/透明/${sprite}-脸.json`);
+  const poseMeta = (await getJSON(`/assets/透明/${sprite}-动作.json`)) || {};
   poseMeta.基础 = { talk: true, dx: 0, dy: 0 };
 
   const el = document.createElement('div');
@@ -128,12 +134,21 @@ async function buildCharacter(name) {
   body.className = 'body';
   motion.appendChild(body);
   el.appendChild(motion);
+  // A character drawn at another framing (小克's pictures are full length) is zoomed about her head,
+  // set in config `characters.<name>.frame`, so heads match on stage; legs run off the bottom edge.
+  const frame = document.createElement('div');
+  frame.className = 'frame';
+  if (fr) {
+    frame.style.transformOrigin = `${pct(fr.originX ?? CANVAS.w / 2, CANVAS.w)} ${pct(fr.originY ?? 0, CANVAS.h)}`;
+    frame.style.transform = `scale(${fr.zoom})`;
+  }
+  body.appendChild(frame);
 
   const poses = {};
   for (const pose of Object.keys(poseMeta)) {
     const img = new Image();
-    img.src = pose === '基础' ? `/assets/透明/${name}-基础.png` : `/assets/透明/${name}-动作-${pose}.png`;
-    body.appendChild(img);
+    img.src = pose === '基础' ? `/assets/透明/${sprite}-基础.png` : `/assets/透明/${sprite}-动作-${pose}.png`;
+    frame.appendChild(img);
     poses[pose] = img;
   }
 
@@ -148,15 +163,25 @@ async function buildCharacter(name) {
     faceBox.dataset.y = y0;
     for (const p of face.patches) {
       const img = new Image();
-      img.src = `/assets/透明/${name}-脸-${p}.png`;
+      img.src = `/assets/透明/${sprite}-脸-${p}.png`;
       faceBox.appendChild(img);
       patches[p] = img;
     }
   }
-  body.appendChild(faceBox);
+  frame.appendChild(faceBox);
+  // Name plate at the waist (viewers mix the characters up): name plus whose 娘 she is, in her colour.
+  if (cfg.overlay.nameplates !== false) {
+    const plate = document.createElement('div');
+    plate.className = 'nameplate';
+    plate.style.setProperty('--c', cfg.characters[name].color);
+    plate.innerHTML = '<b></b><small></small>';
+    plate.querySelector('b').textContent = name;
+    plate.querySelector('small').textContent = cfg.characters[name].badge || '';
+    el.appendChild(plate);
+  }
   $('chars').appendChild(el);
 
-  chars[name] = {
+  return {
     name, el, motion, body, poses, poseMeta, faceBox, patches,
     shownPose: null, shownFace: null,
     pose: null, poseUntil: 0, // body pose override
@@ -165,6 +190,29 @@ async function buildCharacter(name) {
     blinkUntil: 0,
   };
 }
+
+async function buildSkins(name) {
+  const sets = cfg.characters[name].sets || {};
+  const sprites = { [name]: cfg.characters[name].frame };
+  for (const s of Object.values(sets)) sprites[s.sprite] = s.frame || null;
+  skins[name] = {};
+  for (const [sprite, fr] of Object.entries(sprites)) {
+    skins[name][sprite] = await buildCharacter(name, sprite, fr);
+    skins[name][sprite].el.style.display = 'none';
+  }
+  chars[name] = skins[name][name];
+}
+
+// The pose image an action uses in the current scene: a picture set maps actions to its own poses
+// (`sets: { <set>: <pose> }`); otherwise outfit actions only in that outfit, and in an outfit the
+// maid-dress pose images are skipped and only the motion plays.
+function poseFor(def) {
+  if (currentSet) return def.sets?.[currentSet] || null;
+  const fits = def.outfit ? def.outfit === outfit : !(outfit && def.pose);
+  return fits ? def.pose : null;
+}
+
+const MID_MS = 150;
 
 function showPose(c, pose) {
   if (!c.poses[pose]) pose = c.base || '基础';
@@ -197,11 +245,9 @@ function act(name, action, seconds) {
   const c = chars[name];
   const def = cfg.characters[name].actions[action];
   if (!c || !def) return;
-  // Pose images belong to an outfit: outfit actions only in that outfit; in an outfit, the
-  // maid-dress pose images are skipped and only the motion plays.
-  const fits = def.outfit ? def.outfit === outfit : !(outfit && def.pose);
-  if (def.pose && c.poses[def.pose] && fits) {
-    c.pose = def.pose;
+  const pose = poseFor(def);
+  if (pose && c.poses[pose]) {
+    c.pose = pose;
     c.poseUntil = performance.now() + seconds * 1000;
   }
   playMotion(c, def.motion);
@@ -209,7 +255,8 @@ function act(name, action, seconds) {
 
 function talkable(name, action) {
   const def = cfg.characters[name].actions[action];
-  return !def?.pose || chars[name].poseMeta[def.pose]?.talk !== false;
+  const pose = def && poseFor(def);
+  return !pose || chars[name].poseMeta[pose]?.talk !== false;
 }
 
 function tick(now) {
@@ -230,7 +277,14 @@ function tick(now) {
       c.nextBlink = now + 2500 + Math.random() * 3500;
     }
     const blinking = now < c.blinkUntil;
-    const pose = c.pose && now < c.poseUntil ? c.pose : c.base || '基础';
+    // An in-between frame ("<pose>-中", arms halfway) flashes on the way into a pose and out of it.
+    const want = c.pose && now < c.poseUntil ? c.pose : c.base || '基础';
+    if (want !== c.want) {
+      c.mid = [`${want}-中`, `${c.want}-中`].find(p => c.poses[p]) || null;
+      c.midUntil = c.mid && c.want ? now + MID_MS : 0;
+      c.want = want;
+    }
+    const pose = now < c.midUntil ? c.mid : want;
     showPose(c, pose);
 
     let face = null;
@@ -435,6 +489,7 @@ function connect() {
     else if (ev.type === 'danmaku') addDanmaku(ev.user, ev.text);
     else if (ev.type === 'gift') addGift(ev.user, ev.gift, ev.count, ev.tier);
     else if (ev.type === 'scene') applyScene(ev.scene);
+    else if (ev.type === 'audio-output') { cfg.overlay.audioOutput = ev.device; if (ctx) routeOutput(); }
     else if (ev.type === 'segment') $('segment-title').textContent = `《${ev.title}》`;
   };
 }
@@ -443,17 +498,22 @@ function connect() {
 // cable) so the streaming software can capture exactly this and nothing else from the PC.
 // Device names are only visible after a one-time microphone permission; the mic is closed again
 // at once. Without the device the sound stays on the default output, and the control panel says so.
+// The device list (names only) goes to the server so the control panel can offer a choice; picking
+// one there arrives as an 'audio-output' event and re-routes without restarting the show.
 async function routeOutput() {
   const want = cfg.overlay.audioOutput;
   let result = '默认播放设备';
+  let devices = [];
   try {
-    if (want && ctx.setSinkId) {
-      let devices = await navigator.mediaDevices.enumerateDevices();
+    if (ctx.setSinkId) {
+      devices = await navigator.mediaDevices.enumerateDevices();
       if (!devices.some(d => d.kind === 'audiooutput' && d.label)) {
         const s = await navigator.mediaDevices.getUserMedia({ audio: true });
         s.getTracks().forEach(t => t.stop());
         devices = await navigator.mediaDevices.enumerateDevices();
       }
+    }
+    if (want && ctx.setSinkId) {
       // "扬声器 (VB-Audio Virtual Cable)", not the 16-channel variant of the same cable.
       const outs = devices.filter(d => d.kind === 'audiooutput' && d.label.includes(want));
       const dev = outs.find(d => !/16\s*Ch/i.test(d.label)) || outs[0];
@@ -461,13 +521,17 @@ async function routeOutput() {
         await ctx.setSinkId(dev.deviceId);
         result = dev.label;
       } else {
+        if (ctx.sinkId) await ctx.setSinkId('');
         result = `默认播放设备（没找到「${want}」）`;
       }
+    } else if (ctx.sinkId) {
+      await ctx.setSinkId('');
     }
   } catch (e) {
     result = `默认播放设备（切换失败：${e.message}）`;
   }
-  fetch('/api/overlay-audio', { method: 'POST', body: JSON.stringify({ device: result }) });
+  const names = devices.filter(d => d.kind === 'audiooutput' && d.label && d.deviceId !== 'default' && d.deviceId !== 'communications').map(d => d.label);
+  fetch('/api/overlay-audio', { method: 'POST', body: JSON.stringify({ device: result, devices: names }) });
 }
 
 // ?autostart=1 (used by 一键开播, whose Chrome window may autoplay) starts without the click;
@@ -515,8 +579,17 @@ function applyScene(name) {
   $('stage').classList.toggle('plaque-scene', !!sc.plaque);
   document.title = `${sc.title} · 直播画面`;
   outfit = sc.outfit || null;
+  currentSet = sc.set || null;
+  for (const name of NAMES) {
+    const sprite = (currentSet && cfg.characters[name].sets?.[currentSet]?.sprite) || name;
+    const next = skins[name]?.[sprite] || skins[name]?.[name];
+    if (!next || next === chars[name]) continue;
+    chars[name].el.style.display = 'none';
+    chars[name] = next;
+  }
   cast = (sc.cast || ['深深', '月月']).filter(n => chars[n]);
-  for (const c of Object.values(chars)) {
+  for (const name of NAMES) {
+    const c = chars[name];
     c.base = outfit && c.poses[outfit] ? outfit : '基础';
     c.pose = null;
     // Stage positions: per scene for 群口 (three across, a little smaller), else the default.
@@ -540,7 +613,7 @@ window.preview = (name, action, seconds = 3) => act(name, action, seconds);
 (async () => {
   cfg = await (await fetch('/api/config')).json();
   NAMES = Object.keys(cfg.characters);
-  await Promise.all(NAMES.map(buildCharacter));
+  await Promise.all(NAMES.map(buildSkins));
   applyScene(cfg.scene);
   requestAnimationFrame(tick);
   renderStatus();

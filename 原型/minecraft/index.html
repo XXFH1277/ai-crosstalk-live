@@ -1,0 +1,140 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>鲸云社 · 双人游戏导演台</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101c23;color:#eaf1ed;font:15px/1.6 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1100px;margin:30px auto;padding:0 22px}h1{font-size:28px;margin:0}p,small{color:#a1b5bd}section{border:1px solid #354952;background:#172831;border-radius:12px;padding:18px;margin:16px 0}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}input,select,button{font:inherit;padding:8px 12px;border-radius:6px;border:1px solid #557079;background:#223b44;color:#eef7f3}button{cursor:pointer}button.primary{background:#b7e5bc;color:#102b24}button.stop{background:#5e3432}button:disabled{opacity:.4;cursor:default}#actors{display:grid;grid-template-columns:1fr 1fr;gap:16px}.portrait{height:270px;position:relative;overflow:hidden;background:linear-gradient(150deg,#304b55,#183038);border-radius:9px}.rig{width:270px;max-width:100%;aspect-ratio:2/3;position:relative;margin:auto;transform-origin:50% 35%}.body{width:100%;display:block}.patch{position:absolute;display:none;pointer-events:none}.hurt .rig{animation:shake .18s linear 4}.speaking .rig{animation:breathe .8s ease-in-out infinite alternate}.bubble{min-height:54px;font-size:18px;padding:12px 0}.meta{font-size:13px;color:#b0c8cb}.name{font-size:21px;font-weight:700}#phase{padding:8px 0;color:#c6e4c9}#events{max-height:170px;overflow:auto;padding-left:24px}#error{color:#ffb7ad;min-height:22px}@keyframes shake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}@keyframes breathe{to{transform:translateY(-3px)}}@media(max-width:650px){#actors{grid-template-columns:1fr}.portrait{height:235px}}
+</style><main><h1>鲸云社 · 双人游戏导演台</h1><p>深深去探路，月月来拆台。忙时专心游戏，闲时说小段子、接直播弹幕。</p>
+<section><div class="row"><button id="float" class="primary">打开置顶双人窗</button><button id="mouth-test">试听嘴型</button><span id="float-status">立绘、嘴型和字幕可以悬浮在游戏上方</span></div><small>使用 Chrome 或 Edge；Minecraft 使用窗口模式。悬浮后保持本页打开。直播伴侣需额外采集悬浮窗，或采集包含它的显示器；只采集 Minecraft 不会带上立绘。</small></section>
+<section><div class="row"><label>局域网端口 <input id="port" type="number" value="61790" min="1024" max="65535" style="width:115px"></label><button id="connect">两人入服</button><button id="disconnect">两人离开</button><button id="start" class="primary">开启声音和 AI</button><button id="stop" class="stop">暂停 AI 并停止动作</button><button id="sound">试听受击声音</button></div><div id="phase">读取状态…</div><small id="cue"></small><div id="error" role="alert"></div></section>
+<section><div class="row"><label><input type="checkbox" id="comedy" checked> 空闲说短段子</label><label><input type="checkbox" id="audience" checked> 回直播弹幕和谢礼物</label></div><small id="entertainment-state"></small><p>游戏语音共用相声台的弹幕审核与播放权，需要同时运行 7860 服务。玩家指令和战斗优先；安全采集时可边做边聊。短段子最多两句，冷却 12 秒后可准备新题。游戏 AI 暂停后相声台恢复演出。</p></section><section><strong>一起做什么</strong><form id="order" class="row"><input id="message" aria-label="聊天或任务" maxlength="180" placeholder="两人砍树 4 块 / 月月跟着我 / 你们在干嘛？" style="flex:1;min-width:220px"><button class="primary" type="submit">发送</button></form><small id="chat-help"></small><div id="goal" aria-live="polite"></div><div id="tasks">尚未安排任务</div></section><div id="actors"></div><section><strong>最近事件</strong><ol id="events"></ol><small>行动独立执行，聊天不会覆盖任务。可砍树、跟随、挖附近可达矿物；挖矿需要镐，打怪需要斧/剑与足够血量。停止会立即取消任务。死亡后手动重生。</small></section></main>
+<script type="module">
+let floating=null,floatClosing=false;
+const $=id=>document.getElementById(id)||floating?.document.getElementById(id),names=['深深','月月'],client=crypto.randomUUID();
+let state,enabledAudio=false,current=null,lastPort,seq=0,serverInstance,previewWho=0;
+const audio=new Audio(),reflex=new Audio(),cache=new Map(),refTimers={},lastCue={};
+let audioContext,analyser,samples,level=0,animationId,animationWindow=window;
+const faces=new Map();
+for(const who of names){
+ const card=document.createElement('section');card.id=who;
+ card.innerHTML='<div class="name">'+who+'</div><div class="meta" id="'+who+'-meta">未连接</div><div class="portrait"><div class="rig"><img class="body" src="/assets/'+encodeURIComponent(who+'-基础.png')+'"><img class="patch"></div></div><div class="bubble" id="'+who+'-text">等待进入世界</div><div class="row"><select aria-label="'+who+'跟随目标" id="'+who+'-target"></select><button id="'+who+'-follow">跟随</button><button id="'+who+'-respawn">重生</button></div>';
+ $('actors').append(card);
+ $(who+'-follow').onclick=()=>command('follow',{who,target:$(who+'-target').value});
+ $(who+'-respawn').onclick=()=>command('respawn',{who});
+ fetch('/assets/'+encodeURIComponent(who+'-脸.json')).then(r=>r.json()).then(f=>{
+  const p=card.querySelector('.patch'),[x,y,x1,y1]=f.box,[w,h]=f.canvas;
+  p.style.cssText='left:'+x/w*100+'%;top:'+y/h*100+'%;width:'+(x1-x)/w*100+'%;height:'+(y1-y)/h*100+'%';
+ });
+}
+function expression(who,mood){if(faces.get(who)===mood)return;faces.set(who,mood);const p=$(who).querySelector('.patch');if(!mood){p.style.display='none';return;}p.src='/assets/'+encodeURIComponent(who+'-脸-'+mood+'.png');p.style.display='block';}
+function animateMouth(){
+ if(analyser&&current&&!audio.paused){analyser.getFloatTimeDomainData(samples);let sum=0;for(const v of samples)sum+=v*v;level=Math.max(Math.sqrt(sum/samples.length),level*.78);}else level*=.65;
+ for(const who of names)if(!refTimers[who])expression(who,current?.who===who&&!audio.paused?(level>.075?'嘴-张大':level>.018?'嘴-半张':null):null);
+ animationId=animationWindow.requestAnimationFrame(animateMouth);
+}
+function moveAnimation(target){animationWindow.cancelAnimationFrame(animationId);animationWindow=target;animationId=target.requestAnimationFrame(animateMouth);}
+moveAnimation(window);
+const actorHome=$('actors').parentNode,actorNext=$('actors').nextSibling;
+const copyGameUrl=document.createElement('button');copyGameUrl.textContent='复制地址到 Chrome / Edge';$('float-status').after(copyGameUrl);
+$('float-status').setAttribute('role','status');$('float-status').setAttribute('aria-live','polite');
+const browserHelp='请双击桌面「一键游戏陪玩」，或在 Chrome / Edge 打开 http://127.0.0.1:7861/，再点置顶按钮。';
+copyGameUrl.onclick=async()=>{try{await navigator.clipboard.writeText('http://127.0.0.1:7861/');$('float-status').textContent='地址已复制，请粘贴到 Chrome / Edge 的地址栏。';}catch{$('float-status').textContent=browserHelp;}};
+if(!window.documentPictureInPicture){$('float-status').textContent='当前浏览器不支持桌面置顶。'+browserHelp;}
+$('float').onclick=async()=>{
+ if(floating&&!floating.closed){floatClosing=true;floating.close();return;}
+ if(!window.documentPictureInPicture){$('float-status').textContent='当前浏览器不支持桌面置顶。'+browserHelp;return;}
+ try{
+  const actors=$('actors');floating=await documentPictureInPicture.requestWindow({width:660,height:440});
+  const openedAt=performance.now();floatClosing=false;
+  floating.document.title='鲸云社 · 游戏双人悬浮窗';
+  const base=floating.document.createElement('base');base.href=location.origin+'/';floating.document.head.append(base);
+  for(const style of document.querySelectorAll('style'))floating.document.head.append(style.cloneNode(true));
+  const style=floating.document.createElement('style');style.textContent=`
+   html,body{height:100%;overflow:hidden;background:#13262d}body{padding:10px}
+   #actors{display:grid;grid-template-columns:1fr 1fr;gap:10px;height:100%}
+   #actors>section{margin:0;padding:10px;display:flex;flex-direction:column;min-width:0;overflow:hidden;background:linear-gradient(155deg,#29424b,#15252c);border:1px solid #4d6870}
+   .name{font-size:18px;color:#eaf5e9}.meta,#actors .row{display:none}
+   .portrait{height:auto;flex:1;min-height:70px;background:none;border-radius:0;display:flex;justify-content:center;align-items:flex-start}
+   .rig{width:min(100%,275px);max-width:none;margin:0;flex-shrink:0}
+   .bubble{font-size:clamp(14px,2.7vw,20px);line-height:1.4;min-height:70px;max-height:35%;overflow:auto;padding:8px 2px 0;color:#fff3d6;border-top:1px solid #496069}
+   .speaking{border-color:#c4e7a4!important}.hurt{border-color:#ff9f93!important}
+  `;floating.document.head.append(style);floating.document.body.append(actors);moveAnimation(floating);
+  $('float').textContent='收回双人悬浮窗';$('float-status').textContent='双人窗已置顶；开启声音和 AI 后同步斗嘴';
+  floating.addEventListener('pagehide',()=>{const closedImmediately=!floatClosing&&performance.now()-openedAt<2500;actorHome.insertBefore(actors,actorNext);floating=null;moveAnimation(window);$('float').textContent='打开置顶双人窗';$('float-status').textContent=closedImmediately?'置顶窗被当前浏览器立即关闭，与前台相声无关。'+browserHelp:'立绘已回到导演台，播放状态保持';},{once:true});
+ }catch(e){$('float-status').textContent='悬浮窗未打开：'+e.message+'。'+browserHelp;}
+};
+async function command(action,extra={}){
+ try{if(action!=='heartbeat')$('error').textContent='';const r=await fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,client,...extra})});const s=await r.json();if(!r.ok)throw Error(s.error);render(s);return true;}
+ catch(e){$('error').textContent=e.message;return false;}
+}
+function render(s){
+ if(serverInstance!==s.instance){serverInstance=s.instance;seq=0;cancel();}
+ state=s;if(s.bots[0].port&&lastPort!==s.bots[0].port){lastPort=s.bots[0].port;$('port').value=lastPort;}
+ $('phase').textContent=s.ai.phase+' · 已备好 '+s.ai.buffered+'/2 句';$('cue').textContent=s.cueStatus;
+ $('comedy').checked=s.entertainment?.enabled??true;$('audience').checked=s.entertainment?.audienceEnabled??true;$('entertainment-state').textContent=(s.entertainment?.status||'等待接入')+' · 主题 '+(s.entertainment?.topics||0)+' 个';
+ $('start').disabled=(s.ai.enabled&&!s.ai.textOnly)||!s.bots.every(b=>b.status==='已入服')||s.cueStatus!=='短音已就绪';
+ $('chat-help').textContent='游戏里 '+s.controller+' 按 T 也能聊天或下令。支持：继续生存计划、开田、收获小麦、砍树 4 块、挖矿 4 块、打怪、跟着我、停止。';
+ const goal=s.goal;
+ if(goal){
+  const title=document.createElement('p');title.textContent='共同目标：'+goal.objective;
+  const phase=document.createElement('p');phase.textContent='当前阶段：'+goal.title+' · '+goal.status;
+  const progress=document.createElement('p'),p=goal.progress;progress.textContent='石工具 '+p.tools.have+'/'+p.tools.need+' 人 · 木料 '+p.wood.have+'/'+p.wood.need+' 木板等价量 · 圆石 '+p.stone.have+'/'+p.stone.need;
+  const roadmap=document.createElement('details'),summary=document.createElement('summary');roadmap.open=$('goal').querySelector('details')?.open||false;summary.textContent='查看发展路线和缺少的能力';roadmap.append(summary);
+  for(const m of goal.milestones){const line=document.createElement('p');line.textContent=m.title+'：'+m.status;roadmap.append(line);}
+  const blocker=document.createElement('p');blocker.textContent=goal.blocker||'';
+  $('goal').replaceChildren(title,phase,progress,blocker,roadmap);
+  if(s.planner){
+   const learning=document.createElement('details'),head=document.createElement('summary');learning.id='learning';learning.open=!!window.learningOpen;
+   head.textContent='游戏规划与经验 · 已验证 '+s.planner.memory.verified+' 种步骤组合';learning.append(head);
+   learning.ontoggle=()=>{window.learningOpen=learning.open;};
+   for(const a of s.planner.actors){const line=document.createElement('p');line.textContent=a.who+'：'+a.phase+(a.goal?' · '+a.goal:'')+(a.total?' · 第 '+Math.min(a.step+1,a.total)+'/'+a.total+' 步':'')+(a.lookup?' · 最近查询 '+a.lookup:'');learning.append(line);}
+   const hint=document.createElement('small');hint.textContent='按实际背包和作物核验成果；失败会反馈给规划器。经验会保存，但重用前仍检查当前世界条件。';learning.append(hint);$('goal').append(learning);
+  }
+ }else $('goal').replaceChildren();
+ $('tasks').replaceChildren(...(s.tasks||[]).map(t=>{const p=document.createElement('p');p.textContent=t.who+' · '+t.status+' · '+(t.goal?t.goal.title+' → ':'')+t.note+(t.quota?'（'+t.count+'/'+t.quota+'）':'');return p;}));
+ for(const b of s.bots){
+  const last=s.ai.pending?.who===b.who?s.ai.pending:s.ai.history.findLast(h=>h.who===b.who);if(last&&!refTimers[b.who])$(b.who+'-text').textContent=last.text;
+  $(b.who+'-meta').textContent=b.status+' · 血量 '+(b.health??'—')+'/20 · '+(b.target?'跟随 '+b.target:'自由观察');
+  const sel=$(b.who+'-target');if(JSON.stringify(b.players)!==sel.dataset.players){sel.dataset.players=JSON.stringify(b.players);sel.replaceChildren(...b.players.map(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;return o;}));}
+  $(b.who+'-respawn').disabled=b.status!=='已死亡';
+ }
+ for(const group of Object.values(s.cues))for(const items of Object.values(group))for(const c of items)if(!cache.has(c.url)){const a=new Audio(c.url);a.preload='auto';a.load();cache.set(c.url,a);}
+ $('events').replaceChildren(...s.events.slice(-12).reverse().map(e=>{const li=document.createElement('li');li.textContent=new Date(e.at).toLocaleTimeString()+' '+(e.who||'')+' '+(e.text||(e.type==='cancel'?'旧台词已取消':''));return li;}));
+ if(s.ai.pending&&s.ai.pending.owner===client&&s.ai.pending.id>seq)speech(s.ai.pending);
+}
+async function finish(status){const line=current;if(!line)return;current=null;audio.pause();$(line.who).classList.remove('speaking');if(!refTimers[line.who])expression(line.who,null);if(!line.preview)await command('ack',{id:line.id,status});}
+function cancel(){if(current){const line=current;current=null;audio.pause();$(line.who).classList.remove('speaking');if(!refTimers[line.who])expression(line.who,null);}}
+async function speech(line){seq=line.id;if(!enabledAudio){command('ack',{id:line.id,status:'error'});return;}cancel();current=line;$(line.who+'-text').textContent=line.text;$(line.who).classList.add('speaking');audio.src=line.audio;audio.playbackRate=state.playbackRate;try{await audio.play();}catch{finish('error');}}
+audio.onended=()=>finish('played');audio.onerror=()=>finish('error');
+// 反应脸不叠嘴型；普通台词使用音量驱动口型。
+function react(e,preview=false){
+ const r=e.reaction;if(!preview&&Date.now()>=r.expiresAt)return;const who=r.who;
+ clearTimeout(refTimers[who]);$(who).classList.remove('hurt');void $(who).offsetWidth;$(who).classList.add('hurt');expression(who,r.kind==='recovered'?'表情-开心':'表情-惊讶');
+ const options=state?.cues?.[who]?.[r.kind]||[],index=((lastCue[who+r.kind]??-1)+1)%Math.max(1,options.length);lastCue[who+r.kind]=index;const cue=options[index];
+ if(cue){$(who+'-text').textContent=cue.text;if(enabledAudio){audio.volume=.15;reflex.pause();reflex.src=cue.url;reflex.playbackRate=state.playbackRate;reflex.play().catch(()=>{$('error').textContent='受击声音未获播放许可，请点击开启声音';audio.volume=1;});}}
+ refTimers[who]=setTimeout(()=>{delete refTimers[who];expression(who,null);$(who).classList.remove('hurt');},1800);
+}
+reflex.onended=()=>{audio.volume=1;};reflex.onerror=()=>{audio.volume=1;};
+async function unlock(){
+ if(!audioContext){try{audioContext=new AudioContext();analyser=audioContext.createAnalyser();analyser.fftSize=512;samples=new Float32Array(analyser.fftSize);audioContext.createMediaElementSource(audio).connect(analyser);analyser.connect(audioContext.destination);}catch{$('error').textContent='嘴型分析暂不可用，声音照常播放';}}
+ if(audioContext?.state==='suspended')await audioContext.resume();
+ if(enabledAudio)return;
+ enabledAudio=true;const cue=state?.cues?.['深深']?.hurt?.[0];
+ if(cue){reflex.src=cue.url;reflex.volume=0;try{await reflex.play();reflex.pause();}catch{}reflex.volume=1;
+ audio.volume=0;audio.src=cue.url;try{await audio.play();audio.pause();}catch{}audio.volume=1;}
+}
+$('start').onclick=async()=>{await unlock();await command('ai-start');};
+const autoButton=document.createElement('button');autoButton.textContent='继续生存计划';autoButton.title='取消当前任务，按共同建家目标重新分工，缺什么补什么';$('stop').before(autoButton);
+autoButton.onclick=async()=>{await unlock();await command('input',{text:'两人继续生存计划'});};
+$('mouth-test').onclick=async()=>{
+ if(state?.ai.enabled||current){$('error').textContent='请暂停 AI 后试听，避免打断正在播放的台词';return;}
+ await unlock();const who=names[previewWho++%2],cue=state?.cues?.[who]?.hurt?.[0];if(!cue)return;
+ current={who,preview:true};$(who+'-text').textContent='嘴型试听：'+cue.text;$(who).classList.add('speaking');audio.src=cue.url;audio.playbackRate=state.playbackRate;
+ try{await audio.play();}catch{finish('error');}
+};
+$('sound').onclick=async()=>{await unlock();react({reaction:{who:names[previewWho++%2],kind:'hurt'}},true);};
+for(const id of ['comedy','audience'])$(id).onchange=()=>command('entertainment',{enabled:$('comedy').checked,audienceEnabled:$('audience').checked});
+$('connect').onclick=()=>command('connect',{port:Number($('port').value)});
+$('disconnect').onclick=()=>command('disconnect');$('stop').onclick=()=>command('stop');
+$('order').onsubmit=async e=>{e.preventDefault();const text=$('message').value.trim();if(!text)return;await unlock();if(await command('input',{text}))$('message').value='';};
+const stream=new EventSource('/events');stream.onmessage=e=>{const event=JSON.parse(e.data);if(event.type==='cancel')cancel();if(event.type==='reaction')react(event);if(event.type==='speech'&&event.owner===client&&event.id>seq)speech(event);refresh();};
+async function refresh(){try{const r=await fetch('/api/state');if(r.ok)render(await r.json());}catch{$('phase').textContent='接入台断开';cancel();}}
+setInterval(()=>{refresh();if(enabledAudio)command('heartbeat');},3000);refresh();
+</script></html>

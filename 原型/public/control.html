@@ -78,6 +78,13 @@
   </section>
 
   <section class="wide">
+    <h2>相声声音输出到</h2>
+    <div class="row" id="audio-outputs"></div>
+    <p class="hint" id="audio-now"></p>
+    <p class="hint">选一个虚拟声卡（如 VB-Audio 的“CABLE Input”），直播伴侣里把这个声卡加为音频源，你在电脑上放别的声音就不会混进直播。点了立刻切换、记住设置，下次开播自动用。设备列表来自直播画面那个浏览器，画面要先点“开始演出”才有。</p>
+  </section>
+
+  <section class="wide">
     <h2>抖音数据源</h2>
     <div class="row">
       <input id="room" placeholder="你的直播间房间号，即 live.douyin.com/ 后面那串数字">
@@ -141,6 +148,10 @@ function render() {
   $('logs').textContent = s.logs.join('\n');
   renderSources(s.douyin);
   $('scenes').innerHTML = (s.scenes || []).map(n => `<button data-scene="${esc(n)}" class="${n === s.scene ? 'on' : ''}">${esc(n)}</button>`).join('');
+  const outs = [...new Set([...(s.overlayDevices || []), ...(s.audioOutput ? [s.audioOutput] : [])])];
+  $('audio-outputs').innerHTML = [`<button data-output="" class="${s.audioOutput ? '' : 'on'}">默认播放设备</button>`,
+    ...outs.map(n => `<button data-output="${esc(n).replace(/"/g, '&quot;')}"class="${n === s.audioOutput ? 'on' : ''}">${esc(n)}</button>`)].join('');
+  $('audio-now').textContent = `现在实际输出到：${s.overlayAudio}`;
   $('replies').textContent = `AI 回应弹幕：${s.replyDanmaku ? '开' : '关'}`;
   $('replies').classList.toggle('on', s.replyDanmaku);
   $('guard-info').textContent = `违禁词 ${s.bannedWords} 个`;
@@ -181,6 +192,7 @@ $('reload').onclick = () => post('/api/guard', { action: 'reload' });
 document.addEventListener('click', e => {
   const b = e.target.dataset;
   if (b.scene) post('/api/scene', { scene: b.scene });
+  if (b.output !== undefined) post('/api/audio-output', { device: b.output });
   if (b.block) post('/api/guard', { action: 'block', user: b.block });
   if (b.unblock) post('/api/guard', { action: 'unblock', user: b.unblock });
 });

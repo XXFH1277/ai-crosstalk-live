@@ -1,0 +1,47 @@
+import assert from 'node:assert/strict';
+import { GameAI } from '../minecraft/ai.mjs';
+import { GamePacing } from '../minecraft/pacing.mjs';
+import { act } from '../minecraft/play.mjs';
+globalThis.fetch=()=>{throw Error('离线检查禁止联网');};
+let now=1000;
+const clock=()=>now;
+const pacing=new GamePacing(clock);
+const world=[{who:'深深',inventory:[],lastTask:null}];
+assert.equal(pacing.update(world),false);
+for(let i=0;i<4;i++)pacing.reserve();
+now+=60000;
+assert.equal(pacing.directive().allowSpeech,false,'时间过去不应重新开启同一件旧事');
+world[0].inventory=[{name:'oak_log',count:1}];
+assert.equal(pacing.update(world),true);assert.equal(pacing.directive().remaining,2);
+pacing.reserve();pacing.reserve();
+assert.equal(pacing.update(world),false,'重复读取同一背包不能续杯聊天');
+assert.equal(pacing.directive().allowSpeech,false);
+world[0].lastTask={at:now,text:'采集完成'};pacing.update(world);pacing.reserve();pacing.reserve();
+world[0].inventory[0].count++;pacing.update(world);
+assert.equal(pacing.directive().allowSpeech,false,'短期连续变化也不得超过30秒四句');
+let inventory=[],acts=0,voices=0,generated=0;
+const bridges=['深深','月月'].map(who=>({who,session:1,state:{status:'已入服'},rules:{states:new Map([[who,{revision:1}]])},stop(){}}));
+const ai=new GameAI({bridges,now:clock,publish(){},observe:b=>({who:b.who,inventory,choices:[{id:'wait',type:'wait',label:'继续观察'}]}),act(){acts++;},
+ generate:async(w,world,history,signal,pace)=>{generated++;return {action:'wait',text:'模型故意一直斗嘴'};},voice:async()=>{voices++;return {url:'/audio/test.wav',seconds:1};}});
+ai.start('page-test');
+for(let i=0;i<60;i++){now+=1000;ai.heartbeat('page-test');if(ai.pending)ai.acknowledge('page-test',ai.pending.id,'played');await ai.tick();}
+assert.equal(voices,4,'即使模型无视安静要求，也只配音四句');
+assert.ok(acts>4&&generated>4,'闭嘴后仍继续决策执行动作');
+inventory=[{name:'oak_log',count:1}];
+for(let i=0;i<20;i++){now+=1000;ai.heartbeat('page-test');if(ai.pending)ai.acknowledge('page-test',ai.pending.id,'played');await ai.tick();}
+assert.equal(voices,6,'捡到物品仅增加两句反应，之后停止续梗');
+ai.stop();
+const queued=new GameAI({bridges,now:clock,publish(){},observe:ai.observe,act(){},generate:ai.generate,voice:ai.voice});
+queued.start('page-test');
+await queued.tick();now+=101;await queued.tick();now+=101;await queued.tick();
+const playing=queued.pending.id;
+assert.equal(queued.ready.length,2);
+inventory=[{name:'oak_log',count:2}];now+=101;await queued.tick();
+assert.equal(queued.pending.id,playing,'普通拾取不应掐断正在播放的半句话');
+assert.equal(queued.ready.length,0,'拾取变化必须丢弃尚未播放的旧计划');
+queued.stop();
+let stops=0;
+const running={bot:{players:{player:{entity:{position:{offset(){return {};}}}}},lookAt(){}},state:{status:'已入服',activity:{kind:'wood'}},stop(){stops++;}};
+act(running,{type:'wait'});act(running,{type:'look',target:'player'});
+assert.equal(stops,0,'观察和转头不得取消挖掘或跟随');
+console.log('PASS 游戏节奏：旧事最多四句，新事实两句，连续事件限流，安静继续行动，观察不打断任务');

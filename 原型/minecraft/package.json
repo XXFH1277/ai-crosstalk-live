@@ -1,0 +1,9 @@
+{
+  "name": "jingyunshe-minecraft-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "鲸云社本地 Minecraft 接入台",
+  "scripts": { "start": "node server.mjs" },
+  "dependencies": { "mineflayer": "4.39.0", "mineflayer-pathfinder": "2.4.5" }
+}

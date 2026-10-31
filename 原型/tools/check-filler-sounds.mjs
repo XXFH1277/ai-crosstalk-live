@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { Director } from '../lib/director.mjs';
 
 const saved = JSON.parse(readFileSync(new URL('../config.json', import.meta.url), 'utf8'));
+saved.scene = '咖啡厅'; // the usual pair, whatever scene was last picked
 const fixture = enabled => {
   const config = structuredClone(saved);
   config.director.fillers.enabled = enabled;

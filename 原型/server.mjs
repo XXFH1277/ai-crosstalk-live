@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { Provider } from './lib/llm.mjs';
 import { ttsHealthy } from './lib/tts.mjs';
 import { Director } from './lib/director.mjs';
+import { GameAudience } from './lib/game-audience.mjs';
 import { startMockAudience } from './lib/mock-audience.mjs';
 import { Guard } from './lib/guard.mjs';
 import { Ingest } from './lib/ingest.mjs';
@@ -45,6 +46,8 @@ const director = new Director({ config, prompts, library, providers, emit, guard
 mkdirSync(join(ROOT, 'logs'), { recursive: true });
 director.loadMemory(join(ROOT, 'logs', '节目记录.json'));
 director.logFile = join(ROOT, 'logs', `直播-${new Date().toLocaleString('sv-SE').replace(/[: ]/g, '-').slice(0, 16)}.log`);
+director.gameAudience = new GameAudience(director);
+setInterval(() => { if (!director.gameAudience.active) director.sendNext(); }, 1000).unref();
 director.start();
 
 // Real viewer events: two sources at once (douyinLive service + browser extension), merged and
@@ -70,6 +73,7 @@ const EVENT_TYPES = new Set(['danmaku', 'gift', 'prices', 'heartbeat']);
 
 let stopMock = null;
 let overlayAudio = '画面还没开演';
+let overlayDevices = []; // output device names the overlay's browser can see, for the control panel
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.json': 'application/json' };
 
@@ -104,12 +108,18 @@ createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const path = decodeURIComponent(url.pathname);
   try {
+    if (path === '/api/game-audience' && req.method === 'POST') {
+      if(req.headers.host!=='127.0.0.1:7860'||(req.headers.origin&&req.headers.origin!=='http://127.0.0.1:7860')||!req.headers['content-type']?.startsWith('application/json')) return json(res,{error:'只允许本机同源请求'},403);
+      let raw='';for await(const chunk of req){raw+=chunk;if(Buffer.byteLength(raw)>1024)return json(res,{error:'请求过大'},413);}
+      const data=JSON.parse(raw);
+      return json(res,director.gameAudience.exchange(data.owner,{release:data.release===true,take:data.take===true}));
+    }
     if (path === '/') return sendFile(res, join(ROOT, 'public'), 'overlay.html');
     if (path === '/control') return sendFile(res, join(ROOT, 'public'), 'control.html');
     if (path.startsWith('/public/')) return sendFile(res, join(ROOT, 'public'), path.slice(8));
     if (path.startsWith('/assets/')) return sendFile(res, ASSETS, path.slice(8));
     if (path === '/api/config') {
-      const characters = Object.fromEntries(Object.entries(config.characters).map(([k, c]) => [k, { color: c.color, x: c.x, actions: c.actions || {} }]));
+      const characters = Object.fromEntries(Object.entries(config.characters).map(([k, c]) => [k, { color: c.color, x: c.x, frame: c.frame, actions: c.actions || {}, sets: c.sets || {}, badge: c.badge || '' }]));
       return json(res, { characters, overlay: config.overlay, playbackRate: config.tts.playbackRate, scenes: config.scenes, scene: director.shownScene || config.scene });
     }
     if (req.method === 'POST' && path === '/api/scene') {
@@ -139,9 +149,19 @@ createServer(async (req, res) => {
       return json(res, { ok: true });
     }
     if (req.method === 'POST' && path === '/api/overlay-audio') {
-      overlayAudio = String((await body(req)).device || '').slice(0, 120);
+      const b = await body(req);
+      overlayAudio = String(b.device || '').slice(0, 120);
+      if (Array.isArray(b.devices)) overlayDevices = b.devices.slice(0, 30).map(d => String(d).slice(0, 120));
       director.log(`直播画面声音输出到：${overlayAudio}`);
       return json(res, { ok: true });
+    }
+    // Chosen on the control panel: saved to config and switched live in the overlay.
+    if (req.method === 'POST' && path === '/api/audio-output') {
+      const device = String((await body(req)).device || '').slice(0, 120);
+      config.overlay.audioOutput = device;
+      writeFileSync(join(ROOT, 'config.json'), JSON.stringify(config, null, 2));
+      emit({ type: 'audio-output', device });
+      return json(res, { ok: true, device });
     }
     if (req.method === 'POST' && path === '/api/played') {
       director.onPlayed((await body(req)).id);
@@ -206,6 +226,8 @@ createServer(async (req, res) => {
         blockedUsers: [...guard.blockedUsers],
         bannedWords: guard.words.length,
         overlayAudio,
+        overlayDevices,
+        audioOutput: config.overlay.audioOutput || '',
         douyin: { roomId: dy.roomId, douyinLive: douyinLive.status, sources: ingest.stats, prices: Object.keys(ingest.prices).length },
       });
     }
