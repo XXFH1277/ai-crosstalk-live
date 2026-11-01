@@ -34,6 +34,8 @@
 
 ## 快速开始
 
+> **不会写代码？** 打开 [给AI的提示词.md](给AI的提示词.md)，把里面的提示词复制给你的 AI 编程助手（Claude Code、Codex 等），它会自己去 GitHub 拉代码、安装、生成一键开播 / 一键下播的桌面快捷方式，还能帮你设计新角色。key 你自己填，不要发给 AI。
+
 **需要：** Node.js 22+、Python 3.12（素材脚本，需 Pillow / numpy）、ffmpeg、Chrome、抖音直播伴侣、Breeze TTS 本地服务。Windows 上用一键开播脚本；Mac 上可以用 `tts-mac/` 部署 TTS。
 
 1. **填你自己的 key**：把 `原型/.env.local.example` 复制为 `原型/.env.local`，填上各家大模型的 API key。`.env.local` 已被 `.gitignore` 排除，不要提交。
