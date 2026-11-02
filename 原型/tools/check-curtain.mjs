@@ -10,10 +10,12 @@ const read = f => JSON.parse(readFileSync(new URL(f, root), 'utf8'));
 const config = read('config.json');
 const order = config.director.sceneRotation.order;
 config.scene = order[0];
+config.scenes[order[0]].segments = 1; // this test is about the curtain, not how long a scene runs
 let n = 0;
 const fake = { name: 'fake', usable: true, async json(_s, user) {
   if (!user.includes('段子题目')) return { text: '台词', mood: '基础', action: '' };
-  const who = user.includes('群口') ? ['深深', '豆姐', '月月'] : ['深深', '月月'];
+  const on = user.match(/台上：(.+?)。/) || user.match(/两位角色(.+?)都参与/); // write for whoever the outline names
+  const who = on ? on[1].split('、').map(x => x.replace(/（.*$/, '')) : ['深深', '月月'];
   return { title: `段子${++n}`, beats: Array.from({ length: 12 }, (_, i) => ({ who: who[i % who.length], goal: `第${n}段目标${i}` })) };
 } };
 const events = [];

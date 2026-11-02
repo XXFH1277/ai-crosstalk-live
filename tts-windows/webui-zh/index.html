@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>语音工作台 · Breeze TTS 2 C++ 版</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<header>
+  <div class="brand-line"><span class="brand">BREEZE TTS 2</span></div>
+  <div class="heading-row">
+    <div>
+      <div class="title-line"><h1>语音工作台</h1><span class="version-badge">C++ 版</span></div>
+      <p>中英文语音合成，支持声音设计、声音克隆、声音演绎和音频变声。</p>
+    </div>
+    <p class="launcher-note">版本切换请使用桌面启动器</p>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="语音功能">
+  <button class="tab active" data-tab="design">声音设计</button>
+  <button class="tab" data-tab="clone">声音克隆</button>
+  <button class="tab" data-tab="direction">声音演绎</button>
+  <button class="tab" data-tab="changer">音频变声</button>
+  <button class="tab" data-tab="library">声音库</button>
+</nav>
+
+<main>
+  <section class="panel active" id="design">
+    <label>朗读文本
+      <textarea data-f="text" rows="3" placeholder="欢迎来到今天的故事时间，让我们一起开始吧。"></textarea>
+    </label>
+    <label>声音描述
+      <textarea data-f="instruction" aria-describedby="design-instruction-hint" rows="2" placeholder="一位温柔自然的年轻女性，普通话标准，声音清晰，语气平静亲切。"></textarea>
+      <span class="field-hint" id="design-instruction-hint">修改描述后，请点击“生成语音”重新生成；若仍在生成，请先停止。修改不会改变已生成或正在播放的音频。</span>
+    </label>
+    <div class="row">
+      <label>指令强度（CFG） <input data-f="cfg" type="number" value="1" min="1" max="10" step="0.5" /></label>
+      <label>随机种子 <input data-f="seed" type="number" value="42" /></label>
+    </div>
+    <button class="go">生成语音</button>
+  </section>
+
+  <section class="panel" id="clone">
+    <label>朗读文本
+      <textarea data-f="text" rows="3" placeholder="过了这么久，还能再次听到你的声音，真好。"></textarea>
+    </label>
+    <label>已保存的声音
+      <select data-f="voice_id"><option value="">上传参考音频</option></select>
+    </label>
+    <p class="voice-desc"></p>
+    <div class="refblock">
+      <label>参考音频（WAV）
+        <input data-f="ref_audio" type="file" accept="audio/*" />
+      </label>
+      <label>参考音频文字稿（需与音频完全一致）
+        <textarea data-f="ref_text" rows="2" placeholder="请填写参考音频中说出的全部内容，保持文字与音频一致。"></textarea>
+      </label>
+      <label>声音备注（选填，与声音一同保存）
+        <textarea data-f="save_desc" rows="2" placeholder="嗓音略带沙哑的年长讲述者，语速舒缓、温暖，适合有声书。"></textarea>
+      </label>
+      <div class="row saverow">
+        <label>声音名称（英文、数字、- 或 _） <input data-f="save_name" type="text" placeholder="例如：my_voice" /></label>
+        <button class="save-voice">保存声音</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>随机种子 <input data-f="seed" type="number" value="42" /></label>
+    </div>
+    <button class="go">生成语音</button>
+  </section>
+
+  <section class="panel" id="direction">
+    <label>朗读文本
+      <textarea data-f="text" rows="3" placeholder="我们需要谈谈昨晚发生的事情。"></textarea>
+    </label>
+    <label>演绎要求（语气、情绪和语速）
+      <textarea data-f="instruction" aria-describedby="direction-instruction-hint" rows="2" placeholder="请放慢语速，用克制、严肃的语气朗读。"></textarea>
+      <span class="field-hint" id="direction-instruction-hint">修改描述后，请点击“生成语音”重新生成；若仍在生成，请先停止。修改不会改变已生成或正在播放的音频。</span>
+    </label>
+    <label>已保存的声音
+      <select data-f="voice_id"><option value="">上传参考音频</option></select>
+    </label>
+    <p class="voice-desc"></p>
+    <div class="refblock">
+      <label>参考音频（WAV）
+        <input data-f="ref_audio" type="file" accept="audio/*" />
+      </label>
+      <label>参考音频文字稿（需与音频完全一致）
+        <textarea data-f="ref_text" rows="2" placeholder="请填写参考音频中说出的全部内容，保持文字与音频一致。"></textarea>
+      </label>
+      <label>声音备注（选填，与声音一同保存）
+        <textarea data-f="save_desc" rows="2" placeholder="嗓音略带沙哑的年长讲述者，语速舒缓、温暖，适合有声书。"></textarea>
+      </label>
+      <div class="row saverow">
+        <label>声音名称（英文、数字、- 或 _） <input data-f="save_name" type="text" placeholder="例如：my_voice" /></label>
+        <button class="save-voice">保存声音</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>指令强度（CFG） <input data-f="cfg" type="number" value="1" min="1" max="10" step="0.5" /></label>
+      <label>随机种子 <input data-f="seed" type="number" value="42" /></label>
+    </div>
+    <button class="go">生成语音</button>
+  </section>
+
+  <section class="panel" id="changer">
+    <p class="note">将已有录音转换为另一种声音，保留原有内容和节奏，无需提供文字。音高通常跟随目标声音；如果原音频包含歌唱或明显的语调变化，可提高“旋律保留程度”。</p>
+    <label>原始音频（WAV）
+      <input data-f="source" type="file" accept="audio/*" />
+    </label>
+    <label>已保存的声音
+      <select data-f="voice_id"><option value="">上传参考音频</option></select>
+    </label>
+    <p class="voice-desc"></p>
+    <div class="refblock">
+      <label>目标声音音频（WAV）
+        <input data-f="ref_audio" type="file" accept="audio/*" />
+      </label>
+      <label>目标声音文字稿（需与音频完全一致）
+        <textarea data-f="ref_text" rows="2" placeholder="请填写目标声音音频中说出的全部内容。"></textarea>
+      </label>
+      <label>声音备注（选填，与声音一同保存）
+        <textarea data-f="save_desc" rows="2" placeholder="嗓音略带沙哑的年长讲述者，语速舒缓、温暖，适合有声书。"></textarea>
+      </label>
+      <div class="row saverow">
+        <label>声音名称（英文、数字、- 或 _） <input data-f="save_name" type="text" placeholder="例如：my_voice" /></label>
+        <button class="save-voice">保存声音</button>
+      </div>
+    </div>
+    <label>原始音频文字稿（选填，可提高吐字清晰度）
+      <textarea data-f="text" rows="2" placeholder="如有原始音频的准确文字稿，请填写；否则留空。"></textarea>
+    </label>
+    <div class="row">
+      <label>旋律保留程度 <input data-f="keep_acoustic" type="number" value="0" min="0" max="6" step="1" /></label>
+      <label>随机种子 <input data-f="seed" type="number" value="42" /></label>
+    </div>
+    <button class="go">开始变声</button>
+  </section>
+
+  <section class="panel" id="library">
+    <div class="row libbar">
+      <label>筛选 <input id="libfilter" type="text" placeholder="搜索名称、备注、文字稿或附加字段" /></label>
+      <button id="librefresh" class="ghost">刷新</button>
+    </div>
+    <p class="note" id="libcount"></p>
+    <div id="liblist"></div>
+  </section>
+
+  <section class="output">
+    <h2>生成结果</h2>
+    <p class="output-hint">生成后可在这里试听和下载音频。</p>
+    <div class="row">
+      <label class="toggle"><input id="stream" type="checkbox" checked /> 边生成边播放</label>
+      <label class="slider">播放缓冲 <output id="bufval">1.25 秒</output>
+        <input id="buffer" type="range" min="0" max="4" step="0.25" value="1.25" />
+      </label>
+    </div>
+    <div class="status" id="status" role="status" aria-live="polite">就绪</div>
+    <button id="stop" class="stop">停止生成</button>
+    <audio id="player" controls></audio>
+    <a id="download" class="dl" download="breeze.wav">下载音频（WAV）</a>
+  </section>
+</main>
+
+<footer>可在朗读文本中加入声音动作：中文使用 [笑]、[叹气]、[咳嗽]、[清嗓子]；英文使用 (laugh)、(sigh)、(gasp)、(yawn)、(whispers)。如果动作标签被直接读出，可更换随机种子后重新生成。</footer>
+<script src="/app.js"></script>
+</body>
+</html>

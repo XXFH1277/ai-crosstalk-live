@@ -3,7 +3,7 @@
 //   http://127.0.0.1:7860/control   mock danmaku / gifts and status
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFile, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Provider } from './lib/llm.mjs';
@@ -48,6 +48,15 @@ director.loadMemory(join(ROOT, 'logs', '节目记录.json'));
 director.logFile = join(ROOT, 'logs', `直播-${new Date().toLocaleString('sv-SE').replace(/[: ]/g, '-').slice(0, 16)}.log`);
 director.gameAudience = new GameAudience(director);
 setInterval(() => { if (!director.gameAudience.active) director.sendNext(); }, 1000).unref();
+// Gifts only come through the browser extension (see lib/ingest.mjs): say so when it is not there.
+let warnedNoExtension = 0;
+setInterval(() => {
+  const live = /已开播/.test(douyinLive.status);
+  const fresh = Date.now() - (ingest.stats.extension?.lastAt || 0) < 60000;
+  if (!live || fresh || Date.now() - warnedNoExtension < 300000) return;
+  warnedNoExtension = Date.now();
+  director.log(`浏览器插件没有心跳：礼物读不到。请在装了插件、登录了抖音的 Chrome 里打开 live.douyin.com/${dy.roomId}`);
+}, 30000).unref();
 director.start();
 
 // Real viewer events: two sources at once (douyinLive service + browser extension), merged and
@@ -69,7 +78,7 @@ function setRoom(roomId) {
   director.log(roomId ? `抖音房间号设为 ${roomId}` : '已清空抖音房间号，停止接收真实弹幕');
 }
 
-const EVENT_TYPES = new Set(['danmaku', 'gift', 'prices', 'heartbeat']);
+const EVENT_TYPES = new Set(['danmaku', 'gift', 'prices', 'heartbeat', 'giftSample']);
 
 let stopMock = null;
 let overlayAudio = '画面还没开演';
@@ -193,6 +202,10 @@ createServer(async (req, res) => {
       const { source, events } = await body(req);
       for (const ev of (Array.isArray(events) ? events : []).slice(0, 100)) {
         if (!ev || !EVENT_TYPES.has(ev.type)) continue;
+        if (ev.type === 'giftSample') {
+          appendFile(join(ROOT, 'logs', '礼物样本.jsonl'), `${JSON.stringify(ev.sample).slice(0, 1500)}\n`, () => {});
+          continue;
+        }
         const clean = {
           type: ev.type,
           user: String(ev.user ?? '').slice(0, 40),

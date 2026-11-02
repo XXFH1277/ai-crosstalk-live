@@ -12,7 +12,7 @@ const root = new URL('..', import.meta.url);
 const read = f => JSON.parse(readFileSync(new URL(f, root), 'utf8'));
 const config = read('config.json');
 const topics = read('主题库.json').topics;
-const halloween = new Set(topics.filter(t => t.scenes).map(t => t.id));
+const halloween = new Set(topics.filter(t => t.category.startsWith('万圣夜')).map(t => t.id));
 const SPECIAL = new Set(config.scenes['万圣夜'].rotation); // the special night's line-ups (宿舍夜话 too)
 const cardScenes = Object.fromEntries(topics.filter(t => t.scenes).map(t => [t.id, t.scenes]));
 assert.ok(halloween.size >= 12, 'there are 万圣夜 cards');

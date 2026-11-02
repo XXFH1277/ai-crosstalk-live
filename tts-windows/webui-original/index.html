@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>breeze-tts-2.cpp</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<header>
+  <h1>BREEZE-TTS-2.CPP</h1>
+  <p>open-weight bilingual text to speech, running on ggml. voice design, cloning, direction, conversion.</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="design">VOICE DESIGN</button>
+  <button class="tab" data-tab="clone">VOICE CLONE</button>
+  <button class="tab" data-tab="direction">VOICE DIRECTION</button>
+  <button class="tab" data-tab="changer">VOICE CHANGER</button>
+  <button class="tab" data-tab="library">VOICE LIBRARY</button>
+</nav>
+
+<main>
+  <section class="panel active" id="design">
+    <label>TEXT TO SPEAK
+      <textarea data-f="text" rows="3" placeholder="Welcome aboard. Your journey begins now."></textarea>
+    </label>
+    <label>VOICE DESCRIPTION
+      <textarea data-f="instruction" rows="2" placeholder="A warm, thoughtful young woman with a clear, calm delivery."></textarea>
+    </label>
+    <div class="row">
+      <label>CFG SCALE <input data-f="cfg" type="number" value="1" min="1" max="10" step="0.5" /></label>
+      <label>SEED <input data-f="seed" type="number" value="42" /></label>
+    </div>
+    <button class="go">GENERATE</button>
+  </section>
+
+  <section class="panel" id="clone">
+    <label>TEXT TO SPEAK
+      <textarea data-f="text" rows="3" placeholder="It is good to hear your voice again after all this time."></textarea>
+    </label>
+    <label>SAVED VOICE
+      <select data-f="voice_id"><option value="">upload a clip instead</option></select>
+    </label>
+    <p class="voice-desc"></p>
+    <div class="refblock">
+      <label>REFERENCE AUDIO (WAV)
+        <input data-f="ref_audio" type="file" accept="audio/*" />
+      </label>
+      <label>REFERENCE TRANSCRIPT (EXACT)
+        <textarea data-f="ref_text" rows="2" placeholder="This is the exact transcript of the reference audio."></textarea>
+      </label>
+      <label>DESCRIPTION (OPTIONAL, SAVED WITH THE VOICE)
+        <textarea data-f="save_desc" rows="2" placeholder="Gravelly older narrator, slow and warm. Good for audiobooks."></textarea>
+      </label>
+      <div class="row saverow">
+        <label>SAVE AS <input data-f="save_name" type="text" placeholder="my_voice" /></label>
+        <button class="save-voice">SAVE VOICE</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>SEED <input data-f="seed" type="number" value="42" /></label>
+    </div>
+    <button class="go">GENERATE</button>
+  </section>
+
+  <section class="panel" id="direction">
+    <label>TEXT TO SPEAK
+      <textarea data-f="text" rows="3" placeholder="We need to discuss what happened last night."></textarea>
+    </label>
+    <label>DIRECTION
+      <textarea data-f="instruction" rows="2" placeholder="Speak slowly with a restrained, serious tone."></textarea>
+    </label>
+    <label>SAVED VOICE
+      <select data-f="voice_id"><option value="">upload a clip instead</option></select>
+    </label>
+    <p class="voice-desc"></p>
+    <div class="refblock">
+      <label>REFERENCE AUDIO (WAV)
+        <input data-f="ref_audio" type="file" accept="audio/*" />
+      </label>
+      <label>REFERENCE TRANSCRIPT (EXACT)
+        <textarea data-f="ref_text" rows="2" placeholder="This is the exact transcript of the reference audio."></textarea>
+      </label>
+      <label>DESCRIPTION (OPTIONAL, SAVED WITH THE VOICE)
+        <textarea data-f="save_desc" rows="2" placeholder="Gravelly older narrator, slow and warm. Good for audiobooks."></textarea>
+      </label>
+      <div class="row saverow">
+        <label>SAVE AS <input data-f="save_name" type="text" placeholder="my_voice" /></label>
+        <button class="save-voice">SAVE VOICE</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>CFG SCALE <input data-f="cfg" type="number" value="1" min="1" max="10" step="0.5" /></label>
+      <label>SEED <input data-f="seed" type="number" value="42" /></label>
+    </div>
+    <button class="go">GENERATE</button>
+  </section>
+
+  <section class="panel" id="changer">
+    <p class="note">respeaks an existing recording in another voice, keeping its words and timing. no text needed. pitch normally comes from the target voice, so raise KEEP MELODY if the source is sung or strongly intonated.</p>
+    <label>SOURCE AUDIO (WAV)
+      <input data-f="source" type="file" accept="audio/*" />
+    </label>
+    <label>SAVED VOICE
+      <select data-f="voice_id"><option value="">upload a clip instead</option></select>
+    </label>
+    <p class="voice-desc"></p>
+    <div class="refblock">
+      <label>TARGET VOICE (WAV)
+        <input data-f="ref_audio" type="file" accept="audio/*" />
+      </label>
+      <label>TARGET VOICE TRANSCRIPT (EXACT)
+        <textarea data-f="ref_text" rows="2" placeholder="This is the exact transcript of the target voice clip."></textarea>
+      </label>
+      <label>DESCRIPTION (OPTIONAL, SAVED WITH THE VOICE)
+        <textarea data-f="save_desc" rows="2" placeholder="Gravelly older narrator, slow and warm. Good for audiobooks."></textarea>
+      </label>
+      <div class="row saverow">
+        <label>SAVE AS <input data-f="save_name" type="text" placeholder="my_voice" /></label>
+        <button class="save-voice">SAVE VOICE</button>
+      </div>
+    </div>
+    <label>SOURCE TRANSCRIPT (OPTIONAL, SHARPENS THE WORDS)
+      <textarea data-f="text" rows="2" placeholder="Leave empty unless you have the exact words of the source."></textarea>
+    </label>
+    <div class="row">
+      <label>KEEP MELODY <input data-f="keep_acoustic" type="number" value="0" min="0" max="6" step="1" /></label>
+      <label>SEED <input data-f="seed" type="number" value="42" /></label>
+    </div>
+    <button class="go">CONVERT</button>
+  </section>
+
+  <section class="panel" id="library">
+    <div class="row libbar">
+      <label>FILTER <input id="libfilter" type="text" placeholder="name, description, transcript or field" /></label>
+      <button id="librefresh" class="ghost">REFRESH</button>
+    </div>
+    <p class="note" id="libcount"></p>
+    <div id="liblist"></div>
+  </section>
+
+  <section class="output">
+    <div class="row">
+      <label class="toggle"><input id="stream" type="checkbox" checked /> STREAM WHILE GENERATING</label>
+      <label class="slider">BUFFER <output id="bufval">1.25s</output>
+        <input id="buffer" type="range" min="0" max="4" step="0.25" value="1.25" />
+      </label>
+    </div>
+    <div class="status" id="status">IDLE</div>
+    <button id="stop" class="stop">STOP</button>
+    <audio id="player" controls></audio>
+    <a id="download" class="dl" download="breeze.wav">DOWNLOAD WAV</a>
+  </section>
+</main>
+
+<footer>vocal events go inline in parentheses, (laugh) (sigh) (gasp) (yawn) (whispers), or square brackets in chinese, [笑] [叹气]. the tag is plain text so other ones often work too, reroll the seed if it gets read out loud instead</footer>
+<script src="/app.js"></script>
+</body>
+</html>

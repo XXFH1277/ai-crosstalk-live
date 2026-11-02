@@ -7,15 +7,15 @@
 //            user + gift and emitted once, when the combo ends (or after `giftFlushMs` of quiet).
 //            A later copy with a count no higher than what was already emitted is a duplicate;
 //            a higher count emits only the difference.
-//            Only `trusted` sources (douyinLive: gifts pushed by Douyin's server) are believed. The
-//            browser extension reads gifts from chat text, and a viewer can type "送出 小心心 x9999":
-//            while a trusted source is online its gifts are ignored; otherwise they still get
-//            thanked, but as one small gift each, so typing cannot set off a big thanks.
+//            Only `trusted` sources (douyinLive: gifts pushed by Douyin's server) are believed at full
+//            value. The browser extension reads gifts from chat text, and a viewer can type "送出 小心心
+//            x9999": its gifts are thanked as one small gift each, so typing cannot set off a big
+//            thanks, and ignored only while a trusted source is really delivering gifts.
 
 const norm = s => String(s ?? '').replace(/[\s​-‍﻿]/g, '').toLowerCase();
 
 export class Ingest {
-  constructor({ onEvent, dedupeMs = 15000, giftFlushMs = 2500, trusted = ['douyinLive'], trustedOnline }) {
+  constructor({ onEvent, dedupeMs = 15000, giftFlushMs = 2500, trusted = ['douyinLive'], trustedOnline, trustedGiftMs = 600000 }) {
     this.trusted = new Set(trusted);
     // Whether a trusted source is connected now (douyinLive's WebSocket is open). Without it,
     // "has sent something in the last minute" stands in.
@@ -26,7 +26,16 @@ export class Ingest {
     this.seen = new Map(); // danmaku key -> time
     this.gifts = new Map(); // user|gift -> { user, gift, coins, count, emitted, timer, at }
     this.stats = {}; // source -> { received, duplicates, lastAt }
+    this.trustedGiftAt = 0;
+    this.trustedGiftMs = trustedGiftMs;
     this.prices = {}; // gift name -> diamonds, learned from any source that knows them
+  }
+
+  // douyinLive connects as a guest and Douyin does not send gifts to guests (2026-11-02: 12 public
+  // rooms, 471 comments, 0 gift messages), so "connected" says nothing about gifts. Extension gifts
+  // are only dropped while a trusted source has really been delivering gifts.
+  trustedDeliversGifts() {
+    return this.trustedOnline() && Date.now() - this.trustedGiftAt < this.trustedGiftMs;
   }
 
   stat(source) {
@@ -39,8 +48,11 @@ export class Ingest {
     st.lastAt = Date.now();
     if (ev.type === 'danmaku') return this.danmaku(st, ev, source);
     if (ev.type === 'gift') {
-      if (this.trusted.has(source)) return this.gift(st, ev);
-      if (this.trustedOnline()) {
+      if (this.trusted.has(source)) {
+        this.trustedGiftAt = Date.now();
+        return this.gift(st, ev);
+      }
+      if (this.trustedDeliversGifts()) {
         st.rejectedGifts = (st.rejectedGifts || 0) + 1;
         return;
       }

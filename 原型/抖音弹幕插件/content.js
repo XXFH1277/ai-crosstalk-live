@@ -10,12 +10,25 @@
   // "用户：送出 嘉年华 x1" / "用户：内容" / "用户 来了" / system notices.
   function parse(text) {
     const t = text.replace(/\s*\n\s*/g, ' ').trim();
-    let m = t.match(/^(.{1,40}?)[：:]\s*送出了?\s*(.*?)\s*[x×]\s*(\d+)\s*$/);
+    let m = t.match(/^(.{1,40}?)[：:\s]\s*(?:送出了?|送给主播)\s*(?:\d+\s*个)?\s*(.*?)\s*[x×]\s*(\d+)\s*$/);
     if (m) return { type: 'gift', user: m[1].trim(), gift: m[2].trim() || '礼物', count: Number(m[3]) };
     if (/ 来了$|为主播点赞|分享了直播间|关注了主播|加入了粉丝团/.test(t)) return null;
     m = t.match(/^(.{1,40}?)[：:]\s*(.+)$/);
     if (m) return { type: 'danmaku', user: m[1].trim(), text: m[2].trim() };
     return null;
+  }
+
+  // What a gift row looks like, without the viewer's name: to tell real gifts from typed text later.
+  let samples = 0;
+  function sample(el, ev) {
+    const nodes = [...el.querySelectorAll('*')];
+    return {
+      parsedAs: ev?.type || null,
+      gift: ev?.gift || null,
+      count: ev?.count || null,
+      imgs: nodes.filter(n => n.tagName === 'IMG').map(n => (n.src || '').replace(/^https?:\/\/[^/]+/, '').split('~')[0].slice(0, 70)),
+      skeleton: nodes.slice(0, 24).map(n => n.tagName.toLowerCase() + (typeof n.className === 'string' && n.className ? `.${n.className.split(' ')[0]}` : '')).join(' '),
+    };
   }
 
   function scan(root) {
@@ -26,6 +39,10 @@
       if (!active) continue;
       const ev = parse(el.innerText || '');
       if (ev) queue.push(ev);
+      if (/送出|送给主播/.test(el.innerText || '') && samples < 40) {
+        samples++;
+        queue.push({ type: 'giftSample', sample: sample(el, ev) });
+      }
     }
   }
 

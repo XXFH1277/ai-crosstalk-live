@@ -533,7 +533,7 @@ export class Director {
     const cast = this.cast();
     if (cast.length <= 2 && isPair(cast)) return '';
     if (cast.length <= 2) return `【台上】这一段只有 ${cast.join(' 和 ')} 两个人说对口，别人不在台上，不要替别人说话。`;
-    return `【台上】${cast.map(n => `${n}（${this.config.characters[n].role || ''}）`).join('、')}。这是群口相声，三个人都要有戏，接话要接得上前面任何一个人。`;
+    return `【台上】${cast.map(n => `${n}（${this.config.characters[n].role || ''}）`).join('、')}。这是群口相声，${cast.length} 个人都要有戏，接话要接得上前面任何一个人。`;
   }
 
   sceneDef(scene = this.config.scene) {
@@ -758,7 +758,7 @@ export class Director {
           `节目形式：${topic.format}`,
           '请真正围绕本段主题和矛盾写一段全新的相声提纲，不要只换标题。两人的 AI 身份梗（深度思考、长文本、服务器繁忙、token）可以顺手抖一两个，但本段的主线必须是本段主题；不要再写外卖凑单、熬夜、减肥这些讲过很多次的题。',
           cast.length > 2
-            ? `这一段是群口相声，台上：${cast.map(n => `${n}（${this.config.characters[n].role || ''}）`).join('、')}。写 12~14 拍，who 只能是这几个名字，三个人都要有戏（腻缝儿的戏份可以略少，但不少于 3 拍），不连续三拍由同一人说；每拍 goal 推进不同细节和后果，不写重复 goal 或具体台词。`
+            ? `这一段是群口相声，台上：${cast.map(n => `${n}（${this.config.characters[n].role || ''}）`).join('、')}。写 12~14 拍，who 只能是这几个名字，每个人都要有戏（腻缝儿的戏份可以略少，但不少于 3 拍），不连续三拍由同一人说；每拍 goal 推进不同细节和后果，不写重复 goal 或具体台词。`
             : `写 10~14 拍，两位角色${cast.join('、')}都参与，who 只能是这两个名字，不连续三拍由同一人说；每拍 goal 推进不同细节和后果，不写重复 goal 或具体台词。`,
           '标题须与最近题目明显不同。上一段已经结束，不续写上一段剧情；本段可采用指定形式，不必每次都是深深吹牛、月月拆台。',
           `直接输出 JSON，不要任何解释、思考过程或正文：{"title": "段子题目", "beats": [{"who": "${cast[0]}", "goal": "……"}]}`,

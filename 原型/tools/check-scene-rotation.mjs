@@ -13,8 +13,8 @@ config.scene = order[0];
 let n = 0;
 const fake = { name: 'fake', usable: true, async json(_s, user) {
   if (!user.includes('段子题目')) return { text: '台词', mood: '基础', action: '' };
-  const three = user.includes('群口');
-  const who = three ? ['深深', '豆姐', '月月'] : ['深深', '月月'];
+  const on = user.match(/台上：(.+?)。/) || user.match(/两位角色(.+?)都参与/); // write for whoever the outline names
+  const who = on ? on[1].split('、').map(x => x.replace(/（.*$/, '')) : ['深深', '月月'];
   return { title: `段子${++n}`, beats: Array.from({ length: 12 }, (_, i) => ({ who: who[i % who.length], goal: `第${n}段目标${i}` })) };
 } };
 const providers = Object.fromEntries(Object.keys(config.providers).map(k => [k, fake]));
@@ -22,14 +22,16 @@ const d = new Director({ config, library: read('段子库.json'), prompts: Objec
   providers, guard: new Guard(new URL('违禁词.txt', root)), emit: () => {} });
 d.log = () => {};
 
+// each scene plays its own `segments` in a row (default one), then the next takes over
+const expected = [...order.flatMap(s => Array(config.scenes[s].segments ?? config.director.sceneRotation.segments ?? 1).fill(s)), order[0]];
 const seen = [];
-for (let i = 0; i < 12 * 4; i++) {
+for (let i = 0; seen.length < expected.length || i % 12; i++) {
   const job = await d.nextJob({ side: false, main: true });
   if (job.beatIdx === 0) seen.push(config.scene);
   // every beat is spoken by someone on stage in the scene that is showing
   assert.ok(d.cast().includes(job.beat.who), `${job.beat.who} is on stage in ${config.scene}`);
 }
-assert.deepEqual(seen, [...order, order[0]], 'one segment per scene, in order, then round again');
+assert.deepEqual(seen.slice(0, expected.length), expected, 'each scene its segments, in order, then round again');
 
 // manual switch: rotation carries on from the chosen scene
 d.setScene(order[2]);
