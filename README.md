@@ -2,7 +2,7 @@
 
 几个 AI 角色在抖音直播间里说相声：大模型实时写台词、本地 Breeze TTS 配音、网页画面对口型，观众发弹幕点题、送礼物现挂。
 
-本仓库是程序部分：**导演程序、直播画面、导演台（控制台）、抖音弹幕插件、一键开播脚本、Mac 版 Breeze TTS 部署包**。
+本仓库是程序部分：**导演程序、直播画面、导演台（控制台）、抖音弹幕插件、一键开播脚本、Windows 和 Mac 版 Breeze TTS 部署脚本**。
 角色立绘、背景、声音样本、短视频和直播记录都不在这里，需要换成你自己的。
 
 ## 它是怎么运转的
@@ -43,7 +43,7 @@
 2. **填你的接口地址**：`原型/config.json` 里 `providers` 的 `baseUrl` 和 `model` 改成你用的服务（官方接口或 OpenAI 兼容的中转站，示例里的 `your-relay.example.com` 是占位符）。
 3. **直播间房间号**：第一次运行一键开播时会询问，也可以在控制台里填。
 4. **弹幕服务**：下载 [douyinLive](https://github.com/jwwsjlm/douyinLive) v2.3.2 解压到 `工具/douyinLive-v2.3.2/`，按它的 `config.example.yaml` 写好 `config.yaml`，其中 `api.key` 与 `.env.local` 的 `DOUYINLIVE_KEY` 一致。
-5. **Breeze TTS**：Windows 版放到 `C:\breeze-tts2`（或用环境变量 `BREEZE_DIR` 指定目录）；Mac 版见 `tts-mac/使用说明.md`。`config.json` 里每个角色的 `voice` 改成你在 Breeze 声音库里保存的声音名。
+5. **Breeze TTS**：Windows 版看 `tts-windows/使用说明.md`（复制到 `C:\breeze-tts2` 或用环境变量 `BREEZE_DIR` 指定目录，再下载运行程序和模型）；Mac 版见 `tts-mac/使用说明.md`。`config.json` 里每个角色的 `voice` 改成你在 Breeze 声音库里保存的声音名。
 6. **素材**：按 `素材/素材清单.md` 准备角色立绘、口型贴片和背景。
 7. 本地看效果：`cd 原型 && node server.mjs`，浏览器开 `http://127.0.0.1:7860/`（画面）和 `/control`（控制台，可发模拟弹幕和礼物）。
 

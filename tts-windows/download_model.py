@@ -26,6 +26,8 @@ CHUNK = 64 * 1024 * 1024
 PARTS = ROOT / 'downloads' / parts_name
 TARGET = ROOT / 'models' / f'breeze-tts-2-{variant}.gguf'
 PARTS.mkdir(parents=True, exist_ok=True)
+TARGET.parent.mkdir(exist_ok=True)
+(ROOT / 'logs').mkdir(exist_ok=True)
 progress = {}
 lock = threading.Lock()
 
